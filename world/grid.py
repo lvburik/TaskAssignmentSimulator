@@ -22,7 +22,11 @@ class GridWorld:
     def add_task(self, task):
         self.state.tasks[task.id] = task
 
-    def move_agent(self, agent_id, new_position):
+    def move_agent(self, agent_id, displacement):
+        dx, dy = displacement
+        current_x, current_y = self.state.agents[agent_id].state.position
+        new_position = (current_x + dx, current_y + dy)
+
         if not self._in_bounds(new_position):
             self._warn(f"Agent {agent_id} attempted to move out of bounds to {new_position}, Ignoring.")
             return
@@ -63,8 +67,8 @@ class GridWorld:
                     print(f"Task {task.id} completed at time {self.state.time}!")
 
     def step(self, actions):
-        for agent_id, position in actions.items():
-            self.move_agent(agent_id, position)
+        for agent_id, displacement in actions.items():
+            self.move_agent(agent_id, displacement)
 
         for task in self.state.tasks.values():
             if not task.state.completed:
