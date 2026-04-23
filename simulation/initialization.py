@@ -23,7 +23,14 @@ def _pick_position(available_positions):
     return available_positions.pop(index)
 
 
-def create_world(width=10, height=10, number_of_agents=2, number_of_tasks=0, map_name=None):
+def create_world(
+    width=10,
+    height=10,
+    number_of_agents=2,
+    number_of_tasks=0,
+    map_name=None,
+    movement_warnings=True,
+):
     """Create the world and spawn agents and tasks."""
     if map_name is not None:
         walls = load_map_matrix(map_name)
@@ -32,7 +39,7 @@ def create_world(width=10, height=10, number_of_agents=2, number_of_tasks=0, map
     else:
         walls = [[0 for _ in range(width)] for _ in range(height)]
 
-    world = GridWorld(width, height, walls=walls)
+    world = GridWorld(width, height, walls=walls, movement_warnings=movement_warnings)
     available_positions = _free_positions(width, height, walls)
 
     for ii in range(number_of_agents):

@@ -21,6 +21,12 @@ def parse_args():
     parser.add_argument("--fps", type=int, default=4, help="Viewer FPS when --view is enabled")
     parser.add_argument("--map", dest="map_name", default=None, help="PNG map name from the maps folder")
     parser.add_argument(
+        "--movement-warnings",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Enable or disable movement warnings",
+    )
+    parser.add_argument(
         "--assignment",
         choices=assignment_choices,
         default="greedy",
@@ -46,6 +52,7 @@ if __name__ == "__main__":
         view=args.view,
         fps=args.fps,
         map_name=args.map_name,
+        movement_warnings=args.movement_warnings,
         assignment_name=args.assignment,
         pathfinding_name=args.pathfinding,
     )

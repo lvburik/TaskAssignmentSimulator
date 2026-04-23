@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -12,6 +12,11 @@ Position = Tuple[int, int]
 @dataclass
 class AgentState:
     position: Position
+
+@dataclass
+class AgentMemory:
+    task_queue: List[int] = field(default_factory=list)
+    path_queue: List[Position] = field(default_factory=list)
 
 
 @dataclass

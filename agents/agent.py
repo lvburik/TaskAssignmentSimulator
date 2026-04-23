@@ -1,36 +1,78 @@
-from core.states import AgentState
-
+from core.states import AgentState, AgentMemory
+from algorithms.planning.random import random_movement_planner
 
 class Agent:
     def __init__(self, id, position):
         self.id = id
         self.state = AgentState(position=position)
-        self.task = None
-        self.path = []
+        self.memory = AgentMemory()
+
+    def _normalize_task_queue(self, assignment_result):
+        if assignment_result is None:
+            return []
+
+        if isinstance(assignment_result, list):
+            return assignment_result
+
+        if isinstance(assignment_result, tuple):
+            return list(assignment_result)
+
+        return [assignment_result]
+
+    def _drop_completed_or_missing_tasks(self, world_state):
+        filtered = []
+        for task_id in self.memory.task_queue:
+            task = world_state.tasks.get(task_id)
+            if task is not None and not task.state.completed:
+                filtered.append(task_id)
+        self.memory.task_queue = filtered
     
     def decide(self, world_state, assignment_algorithm, pathfinding_algorithm):
-        if self.task is not None and world_state.tasks[self.task].state.completed:
-            self.task = None
-            self.path = []
+        self._drop_completed_or_missing_tasks(world_state)
 
-        #select task if not already assigned
-        if self.task is None:
-            #select task using assignment algorithm
-            self.task = assignment_algorithm(self.state, world_state.tasks)
+        # Select a queue of tasks when queue is empty.
+        if not self.memory.task_queue:
+            assignment_result = assignment_algorithm(self.state, world_state.tasks)
+            self.memory.task_queue = self._normalize_task_queue(assignment_result)
+            self._drop_completed_or_missing_tasks(world_state)
+            self.memory.path = []
 
-        #plan path to task if assigned
-        if not self.path and self.task is not None:
-            task_location = world_state.tasks[self.task].state.location
-            self.path = pathfinding_algorithm(self.state.position, task_location, world_state.walls) or []
+        if not self.memory.task_queue:
+            return self.state.position
 
-        #follow path
-        if self.path:
-            if self.path[0] == self.state.position:
-                self.path.pop(0)  #remove current position from path
+        current_task_id = self.memory.task_queue[0]
+        task_location = world_state.tasks[current_task_id].state.location
 
-            if self.path:
-                return self.path[0]
+        # Plan path if no planned movement exists.
+        if not self.memory.path:
+            planned_path = pathfinding_algorithm(self.state.position, task_location, world_state.walls) or []
+            self.memory.path = planned_path
 
-            
+        # If planner returned no path, skip this task and retry next turn.
+        if not self.memory.path:
+            self.memory.task_queue.pop(0)
+            return self.state.position
+
+        # Follow path.
+        if self.memory.path[0] == self.state.position:
+            self.memory.path.pop(0)
+        elif len(self.memory.path) > 1 and self.memory.path[1] == self.state.position:
+            # If we advanced outside expected sequence, drop stale first waypoint.
+            self.memory.path.pop(0)
+            self.memory.path.pop(0)
+        else:
+            # Agent likely got blocked; force replanning next step and jitter now.
+            self.memory.path = []
+            fallback = random_movement_planner(self.state.position, self.state.position, world_state.walls) or []
+            if fallback:
+                return fallback[0]
+            return self.state.position
+
+        if self.memory.path:
+            return self.memory.path[0]
+
+        return self.state.position
+
+
 
 

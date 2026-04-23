@@ -1,10 +1,10 @@
 from simulation.initialization import create_world
 from visualization.pygame_viewer import PygameViewer
 
-from algortithms.assignment.greedy import greedy_task_selector
-from algortithms.assignment.none import none_task_selector
-from algortithms.planning.Astar import a_star_planner
-from algortithms.planning.random import random_movement_planner
+from algorithms.assignment.greedy import greedy_task_selector
+from algorithms.assignment.none import none_task_selector
+from algorithms.planning.Astar import a_star_planner
+from algorithms.planning.random import random_movement_planner
 
 
 ASSIGNMENT_ALGORITHMS = {
@@ -37,6 +37,7 @@ def run_simulation(
     view=False,
     fps=4,
     map_name=None,
+    movement_warnings=True,
     assignment_name="greedy",
     pathfinding_name="astar",
 ):
@@ -47,6 +48,7 @@ def run_simulation(
         number_of_agents=number_of_agents,
         number_of_tasks=number_of_tasks,
         map_name=map_name,
+        movement_warnings=movement_warnings,
     )
 
     assignment_algorithm = ASSIGNMENT_ALGORITHMS[assignment_name]
