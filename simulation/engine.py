@@ -5,6 +5,8 @@ from algorithms.assignment.greedy import greedy_task_selector
 from algorithms.assignment.none import none_task_selector
 from algorithms.planning.Astar import a_star_planner
 from algorithms.planning.random import random_movement_planner
+import threading
+import time
 
 
 ASSIGNMENT_ALGORITHMS = {
@@ -18,21 +20,41 @@ PATHFINDING_ALGORITHMS = {
 }
 
 
-def _advance_one_step(world, assignment_algorithm, pathfinding_algorithm):
+def _advance_one_step(world, pathfinding_algorithm):
     actions = {}
 
-    #have each agent sense the current world state to get a snapshot of the environment
+    # Have each agent sense the current world state to get a snapshot of the environment
     for agent in world.state.agents.values():
         agent.sense(world.state)
 
-    #have each agent decide on an action based on the current world state and the provided algorithms
+    # Have each agent decide on an action based on the current world state and the provided algorithms
     for agent in world.state.agents.values():
-        action = agent.decide(assignment_algorithm, pathfinding_algorithm)
+        action = agent.act(pathfinding_algorithm)
         if action is not None:
             actions[agent.id] = action
 
-    #execute the decided actions in the world, which will update the world state for the next step
+    # Execute the decided actions in the world, which will update the world state for the next step
     world.step(actions)
+
+
+def _allocation_loop(world, assignment_algorithm, stop_event, interval=0.1):
+    """Continuously run task-allocation for agents in parallel with execution loop.
+
+    - `assignment_algorithm` should be callable (agent_state, tasks) -> assignment
+    - `stop_event` is a threading.Event used to stop the loop cleanly
+    - `interval` is seconds to wait between allocation iterations
+    """
+    while not stop_event.is_set():
+        # Plan tasks for each agent; plan_tasks will update each agent's memory under lock
+        for agent in world.state.agents.values():
+            try:
+                agent.plan_tasks(assignment_algorithm, world.state)
+            except Exception:
+                # Ignore assignment errors per-agent to keep loop robust
+                continue
+
+        # Wait before next allocation round (interruptible)
+        stop_event.wait(interval)
 
 
 def run_simulation(
@@ -65,17 +87,41 @@ def run_simulation(
         viewer = PygameViewer(world)
 
         def step_callback(step):
-            _advance_one_step(world, assignment_algorithm, pathfinding_algorithm)
+            _advance_one_step(world, pathfinding_algorithm)
+
+        # Start allocation thread while the viewer runs
+        stop_event = threading.Event()
+        alloc_thread = threading.Thread(
+            target=_allocation_loop,
+            args=(world, assignment_algorithm, stop_event),
+            daemon=True,
+        )
+        alloc_thread.start()
 
         viewer.run(step_callback=step_callback, max_steps=steps, fps=fps)
+
+        # Stop allocation thread after viewer stops
+        stop_event.set()
+        alloc_thread.join()
+
         return world
 
+
+    # Non-view (console) mode: start allocation thread and run discrete steps
+    stop_event = threading.Event()
+    alloc_thread = threading.Thread(target=_allocation_loop, args=(world, assignment_algorithm, stop_event), daemon=True)
+    alloc_thread.start()
+
     for step in range(steps):
-        _advance_one_step(world, assignment_algorithm, pathfinding_algorithm)
+        _advance_one_step(world, pathfinding_algorithm)
 
         print(f"Step {step}:")
         for agent_id, agent in world.state.agents.items():
             print(f"  Agent {agent_id} at position {agent.state.position}")
+
+    # Stop allocation thread and wait for it to finish
+    stop_event.set()
+    alloc_thread.join()
 
     return world
 

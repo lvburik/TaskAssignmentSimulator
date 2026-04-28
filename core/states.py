@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, TYPE_CHECKING
+from threading import Lock
 
 if TYPE_CHECKING:
     from agents.agent import Agent
@@ -19,6 +20,7 @@ class AgentMemory:
     task_queue: List[int] = field(default_factory=list)
     path: List[Position] = field(default_factory=list)
     world_observation: "WorldState" = None 
+    lock: Lock = field(default_factory=Lock, repr=False, compare=False)
 
 
 @dataclass
