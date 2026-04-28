@@ -56,3 +56,5 @@ def reconstruct_path(came_from, current):
     path.reverse()
     return path
     
+def path_cost(path):
+    return len(path) - 1  # Assuming uniform cost for each step
