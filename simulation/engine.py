@@ -1,16 +1,16 @@
 from simulation.initialization import create_world
 from visualization.pygame_viewer import PygameViewer
 
-from algorithms.assignment.greedy import greedy_task_selector
+from algorithms.assignment.greedy import greedy_task_selector, simple_greedy_task_selector
 from algorithms.assignment.none import none_task_selector
 from algorithms.planning.Astar import a_star_planner
 from algorithms.planning.random import random_movement_planner
 import threading
-import time
 
 
 ASSIGNMENT_ALGORITHMS = {
     "greedy": greedy_task_selector,
+    "greedy_simple": simple_greedy_task_selector,
     "none": none_task_selector,
 }
 
@@ -48,10 +48,11 @@ def _allocation_loop(world, assignment_algorithm, stop_event, interval=0.1):
         # Plan tasks for each agent; plan_tasks will update each agent's memory under lock
         for agent in world.state.agents.values():
             try:
-                agent.plan_tasks(assignment_algorithm, world.state)
+                agent.plan_tasks(assignment_algorithm)
             except Exception:
-                # Ignore assignment errors per-agent to keep loop robust
+                # Keep allocation loop alive even if one agent fails planning
                 continue
+            
 
         # Wait before next allocation round (interruptible)
         stop_event.wait(interval)

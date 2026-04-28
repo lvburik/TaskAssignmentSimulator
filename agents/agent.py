@@ -36,7 +36,8 @@ class Agent:
 
     def plan_tasks(self, assignment_algorithm):
         # assignment_algorithm expected signature: (agent_state, tasks_dict) -> list|int|None
-        assignment_result = assignment_algorithm(self.state, self.memory.world_observation.tasks)
+        assignment_result = assignment_algorithm(self, self.memory.world_observation.tasks)
+        
         normalized_queue = self._normalize_task_queue(assignment_result)
         with self.memory.lock:
             self.memory.task_queue = normalized_queue
