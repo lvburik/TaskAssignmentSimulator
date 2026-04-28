@@ -26,6 +26,10 @@ class Agent:
             if task is not None and not task.state.completed:
                 filtered.append(task_id)
         self.memory.task_queue = filtered
+
+    def sense(self, world_state):
+        # For now, agent has perfect information about the world.
+        return world_state
     
     def decide(self, world_state, assignment_algorithm, pathfinding_algorithm):
         def to_displacement(next_position):
@@ -41,7 +45,7 @@ class Agent:
             assignment_result = assignment_algorithm(self.state, world_state.tasks)
             self.memory.task_queue = self._normalize_task_queue(assignment_result)
             self._drop_completed_or_missing_tasks(world_state)
-            self.memory.path_queue = []
+            self.memory.path = []
 
         if not self.memory.task_queue:
             return
@@ -50,34 +54,36 @@ class Agent:
         task_location = world_state.tasks[current_task_id].state.location
 
         # Plan path if no planned movement exists.
-        if not self.memory.path_queue:
+        if not self.memory.path:
             planned_path = pathfinding_algorithm(self.state.position, task_location, world_state.walls) or []
-            self.memory.path_queue = planned_path
+            self.memory.path = planned_path
 
         # If planner returned no path, skip this task and retry next turn.
-        if not self.memory.path_queue:
+        if not self.memory.path:
             self.memory.task_queue.pop(0)
             return
 
         # Follow path.
-        if self.memory.path_queue[0] == self.state.position:
-            self.memory.path_queue.pop(0)
-        elif len(self.memory.path_queue) > 1 and self.memory.path_queue[1] == self.state.position:
+        if self.memory.path[0] == self.state.position:
+            self.memory.path.pop(0)
+        elif len(self.memory.path) > 1 and self.memory.path[1] == self.state.position:
             # If we advanced outside expected sequence, drop stale first waypoint.
-            self.memory.path_queue.pop(0)
-            self.memory.path_queue.pop(0)
+            self.memory.path.pop(0)
+            self.memory.path.pop(0)
         else:
             # Agent likely got blocked; force replanning next step and jitter now.
-            self.memory.path_queue = []
+            self.memory.path = []
             fallback = random_movement_planner(self.state.position, self.state.position, world_state.walls) or []
             if fallback:
                 return to_displacement(fallback[0])
             return 
 
-        if self.memory.path_queue:
-            return to_displacement(self.memory.path_queue[0])
+        if self.memory.path:
+            return to_displacement(self.memory.path[0])
 
         return
+    
+
 
 
 
