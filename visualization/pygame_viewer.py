@@ -78,8 +78,8 @@ class PygameViewer:
         self.screen.fill(BACKGROUND_COLOR)
         self.draw_walls()
         self.draw_grid()
-        self.draw_agents()
         self.draw_tasks()
+        self.draw_agents()
         pygame.display.flip()
     
     def run(self, step_callback, max_steps=100, fps=10):
