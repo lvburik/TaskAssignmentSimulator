@@ -40,12 +40,11 @@ class Agent:
 
         self._drop_completed_or_missing_tasks(self.memory.world_observation)
 
-        # Select a queue of tasks when queue is empty.
-        if not self.memory.task_queue:
-            assignment_result = assignment_algorithm(self.state, self.memory.world_observation.tasks)
-            self.memory.task_queue = self._normalize_task_queue(assignment_result)
-            self._drop_completed_or_missing_tasks(self.memory.world_observation)
-            self.memory.path = []
+        #reassess the task queue
+        assignment_result = assignment_algorithm(self.state, self.memory.world_observation.tasks)
+        self.memory.task_queue = self._normalize_task_queue(assignment_result)
+        self._drop_completed_or_missing_tasks(self.memory.world_observation)
+        self.memory.path = []
 
         if not self.memory.task_queue:
             return
@@ -53,11 +52,9 @@ class Agent:
         current_task_id = self.memory.task_queue[0]
         task_location = self.memory.world_observation.tasks[current_task_id].state.location
 
-        # Plan path if no planned movement exists.
-        if not self.memory.path:
-            planned_path = pathfinding_algorithm(self.state.position, task_location, self.memory.world_observation.walls) or []
-            self.memory.path = planned_path
-
+        
+        self.memory.path = pathfinding_algorithm(self.state.position, task_location, self.memory.world_observation.walls) or []
+            
         # If planner returned no path, skip this task and retry next turn.
         if not self.memory.path:
             self.memory.task_queue.pop(0)
