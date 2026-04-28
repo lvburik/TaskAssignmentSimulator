@@ -21,12 +21,13 @@ PATHFINDING_ALGORITHMS = {
 def _advance_one_step(world, assignment_algorithm, pathfinding_algorithm):
     actions = {}
 
-    #create world state snapshot for this step
-    snapshot = world.state ##cheap way for now, in theory still mutable but we won't mutate it in the agent's decide function.
+    #have each agent sense the current world state to get a snapshot of the environment
+    for agent in world.state.agents.values():
+        agent.sense(world.state)
 
     #have each agent decide on an action based on the current world state and the provided algorithms
     for agent in world.state.agents.values():
-        action = agent.decide(snapshot, assignment_algorithm, pathfinding_algorithm)
+        action = agent.decide(assignment_algorithm, pathfinding_algorithm)
         if action is not None:
             actions[agent.id] = action
 

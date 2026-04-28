@@ -9,6 +9,7 @@ if TYPE_CHECKING:
 Position = Tuple[int, int]
 
 
+
 @dataclass
 class AgentState:
     position: Position
@@ -16,7 +17,8 @@ class AgentState:
 @dataclass
 class AgentMemory:
     task_queue: List[int] = field(default_factory=list)
-    path_queue: List[Position] = field(default_factory=list)
+    path: List[Position] = field(default_factory=list)
+    world_observation: "WorldState" = None 
 
 
 @dataclass
@@ -33,3 +35,4 @@ class WorldState:
 class TaskState:
     location: Position
     completed: bool = False
+
