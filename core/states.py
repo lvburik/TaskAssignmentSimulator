@@ -38,3 +38,4 @@ class TaskState:
     location: Position
     completed: bool = False
 
+

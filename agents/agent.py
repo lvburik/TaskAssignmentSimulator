@@ -1,6 +1,6 @@
 from core.states import AgentState, AgentMemory
 from algorithms.planning.random import random_movement_planner
-from typing import Optional
+
 
 class Agent:
     def __init__(self, id, position):
