@@ -24,21 +24,14 @@ def greedy_task_selector(agent, tasks):
 
     goal_list = [task.state.location for task in tasks.values() if not task.state.completed]
     
-    goal_distances = find_closest_goal_with_walls(agent.state.position, goal_list, agent.memory.world_observation.walls)
+    goal_distances = find_goal_distances_with_walls(agent.state.position, goal_list, agent.memory.world_observation.walls)
 
-    #sort by distance and task_id to ensure deterministic tie-breaking
-    sorted_goals = sorted(goal_distances.items(), key=lambda x: (x[1], x[0]))
-    if not sorted_goals:
-        return []
-    
-    closest_goal = sorted_goals[0][0]
-    # Find the task corresponding to the closest goal
-    for task in tasks.values():
-        if task.state.location == closest_goal:
-            return [task.id]
+    closest_goal = select_closest_goal(goal_distances)
+
+    return [find_task_id_from_location(tasks, closest_goal)] if closest_goal is not None else []
 
 
-def find_closest_goal_with_walls(start, goal_list, map_matrix):
+def find_goal_distances_with_walls(start, goal_list, map_matrix):
     goal_distances = {}
 
     open_set = []
@@ -69,5 +62,20 @@ def find_closest_goal_with_walls(start, goal_list, map_matrix):
         return None
     
     return goal_distances 
+
+def select_closest_goal(goal_distances):
+    #sort by distance and task_id to ensure deterministic tie-breaking
+    sorted_goals = sorted(goal_distances.items(), key=lambda x: (x[1], x[0]))
+    if not sorted_goals:
+        return []
+    
+    return sorted_goals[0][0]
+
+def find_task_id_from_location(tasks, location):
+    for task in tasks.values():
+        if task.state.location == location:
+            return task.id
+    return None
+    
 
 

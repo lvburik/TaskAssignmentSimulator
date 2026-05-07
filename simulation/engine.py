@@ -5,12 +5,14 @@ from algorithms.assignment.greedy import greedy_task_selector, simple_greedy_tas
 from algorithms.assignment.none import none_task_selector
 from algorithms.planning.Astar import a_star_planner
 from algorithms.planning.random import random_movement_planner
+from algorithms.assignment.auction import decentralized_auction_task_selector
 import threading
 
 
 ASSIGNMENT_ALGORITHMS = {
     "greedy": greedy_task_selector,
     "greedy_simple": simple_greedy_task_selector,
+    "auction": decentralized_auction_task_selector,
     "none": none_task_selector,
 }
 

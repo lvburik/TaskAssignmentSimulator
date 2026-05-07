@@ -3,7 +3,20 @@
 Run from the project root with:
 
     python -m communication.example_usage
+
+Or directly as a file:
+
+    python communication/example_usage.py
 """
+
+from pathlib import Path
+import sys
+
+# Support direct file execution by ensuring the project root is importable.
+if __package__ in (None, ""):
+	project_root = Path(__file__).resolve().parents[1]
+	if str(project_root) not in sys.path:
+		sys.path.insert(0, str(project_root))
 
 from communication import Message, MessageBus
 
