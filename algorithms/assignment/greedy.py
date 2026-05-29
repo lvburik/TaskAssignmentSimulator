@@ -1,6 +1,8 @@
 import heapq
 
+from agents import agent
 from algorithms.other.neighbors import get_grid_neighbors
+from algorithms.other.task_queue_to_action_queue import task_queue_to_action_queue
 
 def simple_greedy_task_selector(agent, tasks):
     """Return Closest incomplete task."""
@@ -17,7 +19,10 @@ def simple_greedy_task_selector(agent, tasks):
             min_distance = distance
             closest_task = task
 
-    return [closest_task.id] if closest_task is not None else []
+    
+    agent.memory.task_queue = [closest_task.id] if closest_task is not None else []
+    return task_queue_to_action_queue(agent)
+
 
 def greedy_task_selector(agent, tasks):
     """Return Closest incomplete task."""
@@ -28,7 +33,8 @@ def greedy_task_selector(agent, tasks):
 
     closest_goal = select_closest_goal(goal_distances)
 
-    return [find_task_id_from_location(tasks, closest_goal)] if closest_goal is not None else []
+    agent.memory.task_queue = [find_task_id_from_location(tasks, closest_goal)] if closest_goal is not None else []
+    return task_queue_to_action_queue(agent)
 
 
 def find_goal_distances_with_walls(start, goal_list, map_matrix):

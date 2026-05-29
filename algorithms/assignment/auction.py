@@ -1,5 +1,8 @@
 from communication import Message, MessageBus
 from algorithms.assignment.greedy import find_goal_distances_with_walls, select_closest_goal, find_task_id_from_location
+from algorithms.other.task_queue_to_action_queue import task_queue_to_action_queue
+
+
 
 bus = MessageBus()
 received_messages = []
@@ -65,12 +68,10 @@ def decentralized_auction_task_selector(agent_state, tasks):
         
 
     if did_win:
-        task_queue = agent_state.memory.task_queue
-        task_queue.append(won_task)
+        agent_state.memory.task_queue.append(won_task)
         
-        return task_queue
-    else:
-        return agent_state.memory.task_queue
+        
+    return task_queue_to_action_queue(agent_state, pathfinding_algorithm)
 
 
 

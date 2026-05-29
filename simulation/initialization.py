@@ -30,8 +30,12 @@ def create_world(
     number_of_tasks=0,
     map_name=None,
     movement_warnings=True,
+    seed=None,
 ):
     """Create the world and spawn agents and tasks."""
+    if seed is not None:
+        random.seed(seed)
+    
     if map_name is not None:
         walls = load_map_matrix(map_name)
         height = len(walls)

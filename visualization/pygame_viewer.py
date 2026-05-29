@@ -1,6 +1,6 @@
 import pygame
 
-CELL_SIZE= 20
+CELL_SIZE= 16
 GRID_COLOR = (45, 45, 45)
 BACKGROUND_COLOR = (18, 18, 18)
 WALL_COLOR = (95, 95, 95)

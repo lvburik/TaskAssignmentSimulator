@@ -17,10 +17,12 @@ class AgentState:
 
 @dataclass
 class AgentMemory:
+    action_queue: List[str] = field(default_factory=list)
     task_queue: List[int] = field(default_factory=list)
     path: List[Position] = field(default_factory=list)
     world_observation: "WorldState" = None 
     lock: Lock = field(default_factory=Lock, repr=False, compare=False)
+    planning_memory: any = None  # Placeholder for any additional planning-related memory
 
 
 @dataclass

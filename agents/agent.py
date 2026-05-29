@@ -8,18 +8,6 @@ class Agent:
         self.state = AgentState(position=position)
         self.memory = AgentMemory()
 
-    def _normalize_task_queue(self, assignment_result):
-        if assignment_result is None:
-            return []
-
-        if isinstance(assignment_result, list):
-            return assignment_result
-
-        if isinstance(assignment_result, tuple):
-            return list(assignment_result)
-
-        return [assignment_result]
-
     def _drop_completed_or_missing_tasks(self, world_state):
         filtered = []
         with self.memory.lock:
@@ -36,11 +24,11 @@ class Agent:
 
     def plan_tasks(self, assignment_algorithm):
         # assignment_algorithm expected signature: (agent_state, tasks_dict) -> list|int|None
-        assignment_result = assignment_algorithm(self, self.memory.world_observation.tasks)
+        updated_memory_state = assignment_algorithm(self, self.memory.world_observation.tasks)
         
-        normalized_queue = self._normalize_task_queue(assignment_result)
+        
         with self.memory.lock:
-            self.memory.task_queue = normalized_queue
+            self.memory = updated_memory_state
     
     def act(self, pathfinding_algorithm):
         def to_displacement(next_position):

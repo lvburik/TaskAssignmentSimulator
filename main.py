@@ -38,6 +38,12 @@ def parse_args():
         default="astar",
         help=f"Pathfinding algorithm ({', '.join(pathfinding_choices)})",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Random seed for reproducible results (default: None for random behavior)",
+    )
     return parser.parse_args()
 
 
@@ -55,4 +61,5 @@ if __name__ == "__main__":
         movement_warnings=args.movement_warnings,
         assignment_name=args.assignment,
         pathfinding_name=args.pathfinding,
+        seed=args.seed,
     )

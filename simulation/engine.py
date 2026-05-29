@@ -3,6 +3,8 @@ from visualization.pygame_viewer import PygameViewer
 
 from algorithms.assignment.greedy import greedy_task_selector, simple_greedy_task_selector
 from algorithms.assignment.none import none_task_selector
+from algorithms.assignment.random import random_task_assignment
+from algorithms.assignment.tom import bayesian_delagation_assignment
 from algorithms.planning.Astar import a_star_planner
 from algorithms.planning.random import random_movement_planner
 from algorithms.assignment.auction import decentralized_auction_task_selector
@@ -14,6 +16,8 @@ ASSIGNMENT_ALGORITHMS = {
     "greedy_simple": simple_greedy_task_selector,
     "auction": decentralized_auction_task_selector,
     "none": none_task_selector,
+    "random": random_task_assignment,
+    "tom": bayesian_delagation_assignment,
 }
 
 PATHFINDING_ALGORITHMS = {
@@ -72,6 +76,7 @@ def run_simulation(
     movement_warnings=True,
     assignment_name="greedy",
     pathfinding_name="astar",
+    seed=None,
 ):
     """Run the simulation loop in console mode or pygame view mode."""
     world = create_world(
@@ -81,6 +86,7 @@ def run_simulation(
         number_of_tasks=number_of_tasks,
         map_name=map_name,
         movement_warnings=movement_warnings,
+        seed=seed,
     )
 
     assignment_algorithm = ASSIGNMENT_ALGORITHMS[assignment_name]
