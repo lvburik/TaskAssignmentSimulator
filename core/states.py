@@ -27,10 +27,8 @@ class AgentMemory:
 
 @dataclass
 class WorldState:
-    agents: Dict[int, "Agent"]
+    agents_locations: Dict[int, Position]
     tasks: Dict[int, "Task"]
-    width: int
-    height: int
     walls: List[List[int]]
     time: int = 0
 

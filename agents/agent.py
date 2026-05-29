@@ -1,4 +1,4 @@
-from core.states import AgentState, AgentMemory
+from core.states import AgentState, AgentMemory, WorldObservation
 from algorithms.planning.random import random_movement_planner
 
 
@@ -20,7 +20,15 @@ class Agent:
     def sense(self, world_state):
         # For now, agent has perfect information about the world.
         with self.memory.lock:
-            self.memory.world_observation = world_state
+            
+
+            self.memory.world_observation = WorldObservation(
+                agent_locations = {agent_id: agent.state.position for agent_id, agent in world_state.agents.items()},
+                walls = world_state.walls,
+                time = world_state.time,
+                tasks = world_state.tasks,
+            )
+
 
     def plan_tasks(self, assignment_algorithm):
         # assignment_algorithm expected signature: (agent_state, tasks_dict) -> list|int|None
@@ -30,7 +38,21 @@ class Agent:
         with self.memory.lock:
             self.memory = updated_memory_state
     
-    def act(self, pathfinding_algorithm):
+    def act(self):
+        if self.action_queue:
+            next_action = self.action_queue(0)
+            
+            #remuve action from queue
+            self.action_queue = self.action_queue[1:]
+
+            return next_action
+        
+        else:
+            return (0, 0)
+    
+        
+    
+    def decide(self, pathfinding_algorithm):
         def to_displacement(next_position):
             return (
                 next_position[0] - self.state.position[0],
