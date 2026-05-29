@@ -71,7 +71,7 @@ def decentralized_auction_task_selector(agent_state, tasks):
         agent_state.memory.task_queue.append(won_task)
         
         
-    return task_queue_to_action_queue(agent_state, pathfinding_algorithm)
+    return task_queue_to_action_queue(agent_state)
 
 
 

@@ -27,9 +27,11 @@ class AgentMemory:
 
 @dataclass
 class WorldState:
-    agents_locations: Dict[int, Position]
+    agents: Dict[int, "Agent"]
     tasks: Dict[int, "Task"]
     walls: List[List[int]]
+    width: int
+    height: int
     time: int = 0
 
 
@@ -38,4 +40,10 @@ class TaskState:
     location: Position
     completed: bool = False
 
+@dataclass
+class WorldObservation:
+    agent_locations: Dict[int, Position]
+    walls: List[List[int]]
+    time: int
+    tasks: Dict[int, TaskState]
 

@@ -8,6 +8,7 @@ from algorithms.assignment.tom import bayesian_delagation_assignment
 from algorithms.planning.Astar import a_star_planner
 from algorithms.planning.random import random_movement_planner
 from algorithms.assignment.auction import decentralized_auction_task_selector
+from algorithms.other.action_to_displacement import action_to_displacement
 import threading
 
 
@@ -26,7 +27,7 @@ PATHFINDING_ALGORITHMS = {
 }
 
 
-def _advance_one_step(world, pathfinding_algorithm):
+def _advance_one_step(world):
     actions = {}
 
     # Have each agent sense the current world state to get a snapshot of the environment
@@ -35,9 +36,10 @@ def _advance_one_step(world, pathfinding_algorithm):
 
     # Have each agent decide on an action based on the current world state and the provided algorithms
     for agent in world.state.agents.values():
-        action = agent.act(pathfinding_algorithm)
-        if action is not None:
-            actions[agent.id] = action
+        action = agent.act()
+        displacement = action_to_displacement(action)
+        if displacement is not None:
+            actions[agent.id] = displacement
 
     # Execute the decided actions in the world, which will update the world state for the next step
     world.step(actions)
@@ -96,7 +98,7 @@ def run_simulation(
         viewer = PygameViewer(world)
 
         def step_callback(step):
-            _advance_one_step(world, pathfinding_algorithm)
+            _advance_one_step(world)
 
         # Start allocation thread while the viewer runs
         stop_event = threading.Event()
@@ -116,21 +118,22 @@ def run_simulation(
         return world
 
 
-    # Non-view (console) mode: start allocation thread and run discrete steps
-    stop_event = threading.Event()
-    alloc_thread = threading.Thread(target=_allocation_loop, args=(world, assignment_algorithm, stop_event), daemon=True)
-    alloc_thread.start()
-
+    # Non-view (console) mode: plan synchronously each step to avoid timing races.
     for step in range(steps):
-        _advance_one_step(world, pathfinding_algorithm)
+        for agent in world.state.agents.values():
+            agent.sense(world.state)
+
+        for agent in world.state.agents.values():
+            try:
+                agent.plan_tasks(assignment_algorithm)
+            except Exception:
+                continue
+
+        _advance_one_step(world)
 
         print(f"Step {step}:")
         for agent_id, agent in world.state.agents.items():
             print(f"  Agent {agent_id} at position {agent.state.position}")
-
-    # Stop allocation thread and wait for it to finish
-    stop_event.set()
-    alloc_thread.join()
 
     return world
 

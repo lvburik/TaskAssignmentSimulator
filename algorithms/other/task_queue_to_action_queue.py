@@ -5,6 +5,15 @@ def task_queue_to_action_queue(agent):
         return agent.memory
 
     current_task_id = agent.memory.task_queue[0]
+
+    #check if tasks is completed
+    if agent.memory.world_observation.tasks[current_task_id].state.completed:
+        #remove task from queue if completed
+        agent.memory.task_queue = agent.memory.task_queue[1:]
+        return agent.memory
+
+
+
     task_location = agent.memory.world_observation.tasks[current_task_id].state.location
 
     path = pathfinding_algorithm(agent.state.position, task_location, agent.memory.world_observation.walls)
