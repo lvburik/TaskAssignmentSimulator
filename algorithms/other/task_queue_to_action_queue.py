@@ -1,6 +1,7 @@
 from algorithms.planning.Astar import a_star_planner as pathfinding_algorithm
 
 def task_queue_to_action_queue(agent):
+    
     if not agent.memory.task_queue:
         return agent.memory
 

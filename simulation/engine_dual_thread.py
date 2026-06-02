@@ -10,6 +10,7 @@ from algorithms.planning.random import random_movement_planner
 from algorithms.assignment.auction import decentralized_auction_task_selector
 from algorithms.other.action_to_displacement import action_to_displacement
 import threading
+from algorithms.assignment.metrics.log_world import WorldLogger
 
 
 ASSIGNMENT_ALGORITHMS = {
@@ -79,6 +80,7 @@ def run_simulation(
     assignment_name="greedy",
     pathfinding_name="astar",
     seed=None,
+    world_logger: WorldLogger | None = None,
 ):
     """Run the simulation loop in console mode or pygame view mode."""
     world = create_world(
@@ -94,11 +96,16 @@ def run_simulation(
     assignment_algorithm = ASSIGNMENT_ALGORITHMS[assignment_name]
     pathfinding_algorithm = PATHFINDING_ALGORITHMS[pathfinding_name]
 
+    if world_logger is not None:
+        world_logger.record(world)
+
     if view:
         viewer = PygameViewer(world)
 
         def step_callback(step):
             _advance_one_step(world)
+            if world_logger is not None:
+                world_logger.record(world)
 
         # Start allocation thread while the viewer runs
         stop_event = threading.Event()
@@ -118,22 +125,24 @@ def run_simulation(
         return world
 
 
-    # Non-view (console) mode: plan synchronously each step to avoid timing races.
+    # Non-view (console) mode: start allocation thread and run discrete steps
+    stop_event = threading.Event()
+    alloc_thread = threading.Thread(target=_allocation_loop, args=(world, assignment_algorithm, stop_event), daemon=True)
+    alloc_thread.start()
+
     for step in range(steps):
-        for agent in world.state.agents.values():
-            agent.sense(world.state)
-
-        for agent in world.state.agents.values():
-            try:
-                agent.plan_tasks(assignment_algorithm)
-            except Exception:
-                continue
-
         _advance_one_step(world)
+
+        if world_logger is not None:
+            world_logger.record(world)
 
         print(f"Step {step}:")
         for agent_id, agent in world.state.agents.items():
             print(f"  Agent {agent_id} at position {agent.state.position}")
+
+    # Stop allocation thread and wait for it to finish
+    stop_event.set()
+    alloc_thread.join()
 
     return world
 

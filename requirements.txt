@@ -42,6 +42,7 @@ launch-yaml==3.4.10
 lifecycle-msgs==2.0.3
 logging-demo==0.33.10
 map-msgs==2.4.1
+matplotlib==3.10.9
 message-filters==4.11.12
 nav-msgs==5.3.7
 numpy==2.4.4
