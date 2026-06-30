@@ -1,53 +1,50 @@
 from planners.class_definition import Planner
 from communication import messages
-from pathfinding.distancefinder import BulkDistanceFinder
+from pathfinding.distancefinder import FindClosestGoal
 from pathfinding.to_direction import ToDirection
+
+from task import Task
+
+#based on CBBA?
 
 class AuctionPlanner(Planner):
     def __init__(self, pathfinding_algorithm=None, communication=None):
         super().__init__(pathfinding_algorithm, communication)
 
-        self.message_bus.subscribe(self.on_task, topic = "bids")
-        self.message_bus.subscribe(self.on_task, topic = "task_assignments")
+        self.message_bus.subscribe(self._on_task, topic = "auction")
+        self.received_messages = []
+
+        self.task_bids = {}
 
         self.my_bids = {}
-        self.current_task_queue = []
-        self.current_goal = None
-        self.recieved_messages = []
 
-        self.agent_location = None
-        self.world_map = None
+        self.current_queue = []
+        self.current_goal = None
+        
         
 
     def update_plan(self, observation: dict):
-        self.agent_location= observation["agent_location"]
+        self.agent_location = observation["agent_location"]
         self.world_map = observation["map"]
+        self.agent_id = observation["agent_id"]
 
+        incomplete_tasks = [task for task in observation["tasks"] if not task.completed]
 
-        recieved_bids = self.check_bids()
+        self._update_distance_to_first_task_in_queue()
 
-        won_auctions = self.what_did_I_win(recieved_bids)
-        #sort won auctions by completion time
-        won_auctions.sort(key=lambda x: x[1])
+        self._create_greedy_queue(incomplete_tasks)
 
-        tasks = [task for task in observation["tasks"] if not task.completed]
+        self._insert_tasks_into_queue(incomplete_tasks)
 
-        # update the current task queue based on the won auctions
-        self.current_task_queue.clear()
-        for win in won_auctions:
-            task_id = win[0]
-            for task in tasks:
-                if task.id == task_id:
-                    self.current_task_queue.append(task)
-                    break
+        self._configure_bids(observation["time"])
 
-        tasks_not_assigned_to_me = [task for task in tasks if task not in self.current_task_queue]
+        self._publish_bids()
 
-        self.calculate_and_publish_bids(tasks_not_assigned_to_me, observation)
+        self._process_received_messages()
 
-        self.current_goal = self.current_task_queue[0].location if self.current_task_queue else None
+        self._clean_up_queue(incomplete_tasks)
 
-
+        pass
 
     def act(self):
         if self.current_goal is None:
@@ -61,65 +58,131 @@ class AuctionPlanner(Planner):
 
         return ToDirection(self.agent_location, path[1])  # Convert the next step in the path to a direction
         
-    def calculate_and_publish_bids(self, tasks, observation):
-        distances = BulkDistanceFinder(observation["map"], observation["agent_location"], [task.location for task in tasks])
+    def _update_distance_to_first_task_in_queue(self):
+        if self.current_queue:
+            first_task, _ = self.current_queue[0]
+            distance_to_first_task = FindClosestGoal(self.world_map, self.agent_location, [first_task.location])[1]
 
-        for task in tasks:
-            if task.completed:
-                continue  # Skip completed tasks
+            self.current_queue[0] = (first_task, distance_to_first_task + 1)  # add 1 to distance to account for the time it takes to perform the task
 
-            # Calculate the bid based on your own criteria (e.g., distance, time, etc.)
-            current_queue_cost = 0
-            if self.current_task_queue:
-                current_queue_cost = max(self.my_bids.get(t.id, 0) for t in self.current_task_queue)
-            bid_value = observation["time"] + distances.get(task.location, float('inf')) + 1 + current_queue_cost
+    def _create_greedy_queue(self, uncompleted_tasks):
+        new_task_locations = {task.location: task for task in uncompleted_tasks if task.id not in [t.id for t, _ in self.current_queue]}
+        while len(self.current_queue) < 5 or len(self.current_queue) < len(new_task_locations):
+            if not new_task_locations:
+                break  # No more tasks to add
 
-            # Store the bid in a dictionary for later reference
-            self.my_bids[task.id] = bid_value
+            #find closest task to the last task in the queue or to the agent's location if the queue is empty
+            last_location = self.current_queue[-1][0].location if self.current_queue else self.agent_location
 
-            # Send the bid to the message bus
-            self.message_bus.publish(messages.Message(
-                sender = observation["agent_id"],
-                topic="bids",
-                payload={"task_id": task.id, "agent_id": observation["agent_id"], "completion_time": bid_value}
-            ))
+            closest_goal, distance_to_closest_goal = FindClosestGoal(self.world_map, last_location, list(new_task_locations.keys()))
+
+            if closest_goal is None:
+                break  # No reachable tasks
+
+            closest_task = new_task_locations[closest_goal]
+
+            #check if a lower bid for the task already exists, if so, don't add it to the queue
+            if self.task_bids.get(closest_task.id) and self.task_bids[closest_task.id][1] < distance_to_closest_goal + 1:
+                del new_task_locations[closest_goal]
+                continue  # Skip adding this task to the queue
+
+            self.current_queue.append((closest_task, distance_to_closest_goal + 1)) # add 1 to distance to account for the time it takes to perform the task
+
+            #remove this task from the new_task_locations to avoid adding it again
+            del new_task_locations[closest_goal]
+
+    def _insert_tasks_into_queue(self, uncompleted_tasks):
+        new_task_locations = {task.location: task for task in uncompleted_tasks if task.id not in [t.id for t, _ in self.current_queue]}
+        start_location = self.agent_location
         
-    def check_bids(self):
+        for ii, queue_entry in enumerate(self.current_queue):
+            task, distance = queue_entry
+
+            canidate_goal_location, distance = FindClosestGoal(self.world_map, start_location, list(new_task_locations.keys()), max_distance=distance - 1)
+
+            if canidate_goal_location is not None:
+                canidate_task = new_task_locations[canidate_goal_location]
+                #check if a lower bid for the task already exists, if so, don't add it to the queue
+
+                if self.task_bids.get(canidate_task.id) and self.task_bids[canidate_task.id][1] < distance + 1:
+                    continue  # Skip adding this task to the queue
+
+                #insert task into the queue at the current position and remove all entries after it, as they are no longer valid
+                self.current_queue[ii] = (canidate_task, distance + 1) # add 1 to distance to account for the time it takes to perform the task
+                self.current_queue = self.current_queue[:ii] # remove all entries after the inserted task
+
+                return
+
+            start_location = task.location  # Update the start location for the next task
+
+    def _clean_up_queue(self, uncompleted_tasks):
+        # Remove tasks from the queue that are no longer in the uncompleted_tasks list
+        uncompleted_task_ids = {task.id for task in uncompleted_tasks}
+        self.current_queue = [(task, distance) for task, distance in self.current_queue if task.id in uncompleted_task_ids]
+
+        # Update current_goal to the first task in the queue if it exists
+        if self.current_queue:
+            self.current_goal = self.current_queue[0][0].location
+        else:
+            self.current_goal = None
+
         
-        #returns a dict of task_id to the lowest bid for that task and the corresponding agent_id
-        bids = {}
-        for msg in self.received_messages:
-                if isinstance(msg, messages.Message) and msg.topic == "bids":
-                    task_id = msg.payload["task_id"]
-                    agent_id = msg.payload["agent_id"]
-                    if agent_id == self.agent_id:
-                        continue  # Skip own bids
 
-                    completion_time = msg.payload["completion_time"]
-                    if task_id not in bids or completion_time < bids[task_id]["completion_time"]:
-                            bids[task_id] = {"agent_id": agent_id, "completion_time": completion_time}
-        return bids
-
-    def what_did_I_win(self, recieved_bids):
-        my_wins = []
+    def _configure_bids(self, time):
         
-        for task_id, my_bid in self.my_bids.items():
-            if task_id in recieved_bids:
-                lowest_bid = recieved_bids[task_id]
-                if my_bid < lowest_bid["completion_time"]:
-                    my_wins.append((task_id, my_bid))
+        total_distance = 0
+        for task, distance in self.current_queue:
+            total_distance += distance
+            self.my_bids[task.id] = total_distance + time
 
-                    #if lost to another, forget all my own bids with a higher completion time than the winning bid
-                    for t_id, bid in list(self.my_bids.items()):
-                        if bid > lowest_bid["completion_time"]:
-                            del self.my_bids[t_id]
+    def _publish_bids(self):
+        queue_task_ids = [task.id for task, _ in self.current_queue]
+        for task_id, bid_value in self.my_bids.items():
+            if task_id in queue_task_ids:
+                self._publish_bid(task_id, bid_value)
             else:
-                # If no other bids were received for this task, consider it a win
-                my_wins.append((task_id, my_bid))
+                # If the task is no longer in the queue, publish a high bid to indicate disinterest
+                self._release_bid(task_id)        
 
-        return my_wins
-
-    def on_task(self, message: messages.Message) -> None:
+    def _on_task(self, message: messages.Message) -> None:
         self.received_messages.append(("topic", message.sender, message.topic, message.payload))
-                  
 
+    def _publish_bid(self, task_id, bid_value):
+        self.message_bus.publish(messages.Message(
+            sender=self.agent_id,
+            topic="aucion",
+            payload={"type":"bid", "task_id": task_id, "agent_id": self.agent_id, "completion_time": bid_value}
+        ))
+                  
+    def _release_bid(self, task_id):
+        self.message_bus.publish(messages.Message(
+            sender=self.agent_id,
+            topic="auction",
+            payload={"type": "release", "task_id": task_id, "agent_id": self.agent_id}
+        ))
+
+    def _process_received_messages(self):
+        recieved_bids = [msg for msg in self.received_messages if msg[2] == "auction" and msg[3]["type"] == "bid"]
+        recieved_releases = [msg for msg in self.received_messages if msg[2] == "auction" and msg[3]["type"] == "release"]
+
+        for bid_msg in recieved_bids:
+            task_id = bid_msg[3]["task_id"]
+            agent_id = bid_msg[3]["agent_id"]
+            completion_time = bid_msg[3]["completion_time"]
+
+            if not self.task_bids[task_id]:
+                self.task_bids[task_id] = [agent_id, completion_time]
+            else:
+                _, current_best_time = self.task_bids[task_id]
+                if completion_time < current_best_time:
+                    self.task_bids[task_id] = [agent_id, completion_time]
+
+        for release_msg in recieved_releases:
+            task_id = release_msg[3]["task_id"]
+            agent_id = release_msg[3]["agent_id"]
+
+            if self.task_bids.get(task_id) and self.task_bids[task_id][0] == agent_id:
+                del self.task_bids[task_id]
+
+        #clear the received messages after processing
+        self.received_messages.clear()
