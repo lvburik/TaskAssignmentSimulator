@@ -1,5 +1,5 @@
 number_of_agents = [5]
-planner_algorithm = ["TheoryOfMindPlanner"]
+planner_algorithm = ["AuctionPlanner"]
 pathfinding_algorithm = ["DoubleDijkstra"]
 world_map = ["Map14.png"]
 number_of_tasks = [100]
@@ -8,7 +8,7 @@ simulation_timesteps = [100]
 
 visualization = True
 
-record = True
+record = False
 data_folder_dir = "data/"
 
 
