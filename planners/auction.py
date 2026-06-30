@@ -1,4 +1,4 @@
-from Planners.class_definition import Planner
+from planners.class_definition import Planner
 from communication import messages
 from pathfinding.distancefinder import BulkDistanceFinder
 from pathfinding.to_direction import ToDirection

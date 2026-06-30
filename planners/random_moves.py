@@ -1,4 +1,4 @@
-from Planners.class_definition import Planner
+from planners.class_definition import Planner
 import random
 
 class RandomMovesPlanner(Planner):

@@ -1,4 +1,4 @@
-import Planners.class_definition as planner_def
+import planners.class_definition as planner_def
 
 
 class Agent:

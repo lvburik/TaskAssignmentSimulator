@@ -4,10 +4,10 @@ import random
 
 from visualization.pygame_viewer import PygameViewer
 
-from Planners.random_moves import RandomMovesPlanner
-from Planners.greedy import GreedyTaskSelector
-from Planners.tom import TheoryOfMindPlanner
-from Planners.auction import AuctionPlanner
+from planners.random_moves import RandomMovesPlanner
+from planners.greedy import GreedyTaskSelector
+from planners.tom import TheoryOfMindPlanner
+from planners.auction import AuctionPlanner
 
 from pathfinding.Double_Dijkstra import DoubleDijkstraPlanner
 from pathfinding.AStar import AStarPlanner
