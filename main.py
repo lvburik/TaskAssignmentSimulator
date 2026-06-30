@@ -1,35 +1,63 @@
-import config
+number_of_agents = [5]
+planner_algorithm = ["TheoryOfMindPlanner"]
+pathfinding_algorithm = ["DoubleDijkstra"]
+world_map = ["Map14.png"]
+number_of_tasks = [100]
+Simulation_seeds = [1]
+simulation_timesteps = [100]
 
-from simulation.engine_dual_thread import (
-    available_assignment_algorithms,
-    available_pathfinding_algorithms,
-)
-from simulation.engine_dual_thread import run_simulation as run_dual_thread_simulation
-from simulation.engine_single_thread import run_simulation as run_single_thread_simulation
-from algorithms.assignment.metrics.log_world import WorldLogger
+visualization = True
+record = False
+
+
+import simrunner
+import random
+import os
+
+
+def _resolve_world_map_path(map_name: str) -> str:
+    return os.path.join(os.path.dirname(__file__), "maps", map_name)
+
+def main():
+    number_of_simulations = len(number_of_agents) * len(planner_algorithm) * len(pathfinding_algorithm) * len(world_map) * len(number_of_tasks) * len(Simulation_seeds) * len(simulation_timesteps)
+
+    for ii in range(number_of_simulations):
+        # Calculate the indices for each parameter based on the current simulation index
+        idx_agents = ii % len(number_of_agents)
+        idx_planner = (ii // len(number_of_agents)) % len(planner_algorithm)
+        idx_pathfinding = (ii // (len(number_of_agents) * len(planner_algorithm))) % len(pathfinding_algorithm)
+        idx_map = (ii // (len(number_of_agents) * len(planner_algorithm) * len(pathfinding_algorithm))) % len(world_map)
+        idx_tasks = (ii // (len(number_of_agents) * len(planner_algorithm) * len(pathfinding_algorithm) * len(world_map))) % len(number_of_tasks)
+        idx_seed = (ii // (len(number_of_agents) * len(planner_algorithm) * len(pathfinding_algorithm) * len(world_map) * len(number_of_tasks))) % len(Simulation_seeds)
+        idx_timesteps = (ii // (len(number_of_agents) * len(planner_algorithm) * len(pathfinding_algorithm) * len(world_map) * len(number_of_tasks) * len(Simulation_seeds))) % len(simulation_timesteps)
+
+        # Get the current parameters for this simulation
+        current_number_of_agents = number_of_agents[idx_agents]
+        current_planner_algorithm = planner_algorithm[idx_planner]
+        current_pathfinding_algorithm = pathfinding_algorithm[idx_pathfinding]
+        current_world_map = _resolve_world_map_path(world_map[idx_map])
+        current_number_of_tasks = number_of_tasks[idx_tasks]
+        current_simulation_seed = Simulation_seeds[idx_seed]
+        current_simulation_timesteps = simulation_timesteps[idx_timesteps]
+
+        random.seed(current_simulation_seed)  # Set the random seed for reproducibility
+
+        # Initialize the simulation with the current parameters
+        sim_world = simrunner.init(
+            current_world_map,
+            current_number_of_agents,
+            current_number_of_tasks,
+            current_planner_algorithm,
+            current_pathfinding_algorithm,
+            current_simulation_timesteps
+        )
+
+        simrunner.engine(current_simulation_timesteps, visualization, record, sim_world)
 
 
 if __name__ == "__main__":
-    # Note: argparse has been removed. Use `config.py` to change defaults.
-    # If you need runtime overrides, alter `config.py` or call the relevant
-    # simulation runner directly from another script.
-    selected_runner = run_single_thread_simulation if config.ENGINE == "single" else run_dual_thread_simulation
-    world_logger = WorldLogger() if config.LOG_WORLD else None
-    selected_runner(
-        width=config.WIDTH,
-        height=config.HEIGHT,
-        number_of_agents=config.NUMBER_OF_AGENTS,
-        number_of_tasks=config.NUMBER_OF_TASKS,
-        steps=config.STEPS,
-        view=config.VIEW,
-        fps=config.FPS,
-        map_name=config.MAP_NAME,
-        movement_warnings=config.MOVEMENT_WARNINGS,
-        assignment_name=config.ASSIGNMENT_DEFAULT,
-        pathfinding_name=config.PATHFINDING_DEFAULT,
-        seed=config.SEED,
-        world_logger=world_logger,
-    )
+    main()
 
-    if world_logger is not None:
-        world_logger.save(config.WORLD_LOG_PATH)
+
+    
+

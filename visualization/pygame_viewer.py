@@ -12,11 +12,12 @@ TASK_COLOR = (255, 100, 0)
 class PygameViewer:
     def __init__(self, world):
         self.world = world
+        
 
         pygame.init()
 
-        self.width = world.state.width * CELL_SIZE
-        self.height = world.state.height * CELL_SIZE
+        self.width = world.width * CELL_SIZE
+        self.height = world.height * CELL_SIZE
 
         self.screen = pygame.display.set_mode((self.width, self.height))
         pygame.display.set_caption("Agent Simulation")
@@ -24,7 +25,7 @@ class PygameViewer:
         self.clock = pygame.time.Clock()
 
     def draw_grid(self):
-        for x in range(0, self.world.state.width):
+        for x in range(0, self.world.width):
             pygame.draw.line(
                 self.screen, 
                 GRID_COLOR, 
@@ -32,7 +33,7 @@ class PygameViewer:
                 (x*CELL_SIZE, self.height)
                 )
             
-        for y in range(0, self.world.state.height):
+        for y in range(0, self.world.height):
             pygame.draw.line(
                 self.screen, 
                 GRID_COLOR, 
@@ -41,7 +42,7 @@ class PygameViewer:
                 )
 
     def draw_walls(self):
-        for y, row in enumerate(self.world.state.walls):
+        for y, row in enumerate(self.world.map):
             for x, cell in enumerate(row):
                 if cell == 1:
                     pygame.draw.rect(
@@ -51,8 +52,8 @@ class PygameViewer:
                     )
             
     def draw_agents(self):
-        for agent in self.world.state.agents.values():
-            x, y = agent.state.position
+        for agent in self.world.agents:
+            x, y = agent.location
 
 
             pygame.draw.circle(
@@ -63,10 +64,13 @@ class PygameViewer:
                 )
             
     def draw_tasks(self):
-        for task in self.world.state.tasks.values():
-            x, y = task.state.location
+        for task in self.world.tasks:
+            if not task.spawned or task.completed:
+                continue
 
-            color = TASK_COLOR if not task.state.completed else (100, 50, 0)
+            x, y = task.location
+
+            color = TASK_COLOR
 
             pygame.draw.rect(
                 self.screen, 
