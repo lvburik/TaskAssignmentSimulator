@@ -66,7 +66,7 @@ def main():
                 "number_of_tasks": current_number_of_tasks,
                 "simulation_seed": current_simulation_seed,
                 "simulation_timesteps": current_simulation_timesteps
-            }, world_info = sim_world.get_world_info(), output_dir=data_folder_dir)
+            }, world_info = sim_world.get_world_map_info(), output_dir=data_folder_dir)
 
         
         simrunner.engine(current_simulation_timesteps, visualization, logger, sim_world)
