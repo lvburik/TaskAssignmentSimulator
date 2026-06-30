@@ -46,4 +46,4 @@ htmlcov/
 Thumbs.db
 
 # Simulated Data
-Data/*
+data/*

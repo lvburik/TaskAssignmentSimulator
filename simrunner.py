@@ -14,7 +14,8 @@ from pathfinding.AStar import AStarPlanner
 
 from communication.bus import MessageBus
 
-from world.world import World
+from world import World
+from datalogger import DataLogger
 
 max_fps = 15
 
@@ -63,14 +64,15 @@ def init(world_map, number_of_agents, number_of_tasks, planner_algorithm, pathfi
 
     return World(world_map, agents, tasks)
     
-def engine(steps, visualization, record, world):
+def engine(steps, visualization, logger: DataLogger, world):
+    
     if visualization:
         viewer = PygameViewer(world)
-        viewer.run(step_callback=lambda _step: world.step(), max_steps=steps, fps=max_fps)
+        viewer.run(step_callback=lambda _step: world.step(logger), max_steps=steps, fps=max_fps)
         return
 
     for _ in range(steps):
-        world.step()
+        world.step(logger)
+        
 
-    if record:
-        pass
+    

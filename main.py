@@ -7,12 +7,16 @@ Simulation_seeds = [1]
 simulation_timesteps = [100]
 
 visualization = True
-record = False
+
+record = True
+data_folder_dir = "data/"
 
 
 import simrunner
 import random
 import os
+
+from datalogger import DataLogger
 
 
 def _resolve_world_map_path(map_name: str) -> str:
@@ -49,10 +53,23 @@ def main():
             current_number_of_tasks,
             current_planner_algorithm,
             current_pathfinding_algorithm,
-            current_simulation_timesteps
+            current_simulation_timesteps,
         )
 
-        simrunner.engine(current_simulation_timesteps, visualization, record, sim_world)
+        logger = None
+        if record:
+            logger = DataLogger({
+                "number_of_agents": current_number_of_agents,
+                "planner_algorithm": current_planner_algorithm,
+                "pathfinding_algorithm": current_pathfinding_algorithm,
+                "world_map": world_map[idx_map],
+                "number_of_tasks": current_number_of_tasks,
+                "simulation_seed": current_simulation_seed,
+                "simulation_timesteps": current_simulation_timesteps
+            }, world_info = sim_world.get_world_info(), output_dir=data_folder_dir)
+
+        
+        simrunner.engine(current_simulation_timesteps, visualization, logger, sim_world)
 
 
 if __name__ == "__main__":
