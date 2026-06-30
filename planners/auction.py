@@ -21,14 +21,18 @@ class AuctionPlanner(Planner):
         self.current_queue = []
         self.current_goal = None
         
-        
-
     def update_plan(self, observation: dict):
         self.agent_location = observation["agent_location"]
         self.world_map = observation["map"]
         self.agent_id = observation["agent_id"]
 
         incomplete_tasks = [task for task in observation["tasks"] if not task.completed]
+
+        self._process_received_messages()
+
+        self._remove_lost_tasks_from_queue()
+
+        self._clean_up_queue(incomplete_tasks)
 
         self._update_distance_to_first_task_in_queue()
 
@@ -39,11 +43,6 @@ class AuctionPlanner(Planner):
         self._configure_bids(observation["time"])
 
         self._publish_bids()
-
-        self._process_received_messages()
-
-        self._clean_up_queue(incomplete_tasks)
-
         pass
 
     def act(self):
@@ -91,6 +90,14 @@ class AuctionPlanner(Planner):
             #remove this task from the new_task_locations to avoid adding it again
             del new_task_locations[closest_goal]
 
+    def _remove_lost_tasks_from_queue(self):
+        # remove tasks that agent got outbid on from the queue
+        for ii, (task, distance) in enumerate(self.current_queue):
+            if self.task_bids.get(task.id) and self.task_bids[task.id][0] != self.agent_id:
+                #remove all tasks from the queue after this one, as they are no longer valid
+                self.current_queue = self.current_queue[:ii]
+                break  # Exit the loop after modifying the list
+
     def _insert_tasks_into_queue(self, uncompleted_tasks):
         new_task_locations = {task.location: task for task in uncompleted_tasks if task.id not in [t.id for t, _ in self.current_queue]}
         start_location = self.agent_location
@@ -104,7 +111,7 @@ class AuctionPlanner(Planner):
                 canidate_task = new_task_locations[canidate_goal_location]
                 #check if a lower bid for the task already exists, if so, don't add it to the queue
 
-                if self.task_bids.get(canidate_task.id) and self.task_bids[canidate_task.id][1] < distance + 1:
+                if self.task_bids.get(canidate_task.id) and self.task_bids[canidate_task.id][1] < distance -1:
                     continue  # Skip adding this task to the queue
 
                 #insert task into the queue at the current position and remove all entries after it, as they are no longer valid
@@ -150,7 +157,7 @@ class AuctionPlanner(Planner):
     def _publish_bid(self, task_id, bid_value):
         self.message_bus.publish(messages.Message(
             sender=self.agent_id,
-            topic="aucion",
+            topic="auction",
             payload={"type":"bid", "task_id": task_id, "agent_id": self.agent_id, "completion_time": bid_value}
         ))
                   
@@ -170,7 +177,7 @@ class AuctionPlanner(Planner):
             agent_id = bid_msg[3]["agent_id"]
             completion_time = bid_msg[3]["completion_time"]
 
-            if not self.task_bids[task_id]:
+            if not self.task_bids.get(task_id):
                 self.task_bids[task_id] = [agent_id, completion_time]
             else:
                 _, current_best_time = self.task_bids[task_id]
