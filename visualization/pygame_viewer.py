@@ -3,13 +3,18 @@ import pygame
 CELL_SIZE= 16
 GRID_COLOR = (45, 45, 45)
 BACKGROUND_COLOR = (18, 18, 18)
-WALL_COLOR = (95, 95, 95)
+WALL_COLOR = (75, 75, 75)
 
-AGENT_COLOR = (0, 200, 255)
+AGENT_COLOR = (0, 100, 155)
 
-TASK_COLOR = (255, 100, 0)
+TASK_COLOR = (155, 50, 0)
 
-TEXT_COLOR = (0, 255, 0)
+TEXT_INFO_COLOR = (0, 255, 0)
+DEBUG_TEXT_COLOR = (255, 255, 255)
+
+basic_sim_info = True
+debug_mode = True
+debug_mode_settings = (1, 3, 4) #1 = show agent ids, 2 = show agent goal locations, 3 = show task ids, 4 = show agent task queues
 
 class PygameViewer:
     def __init__(self, world):
@@ -86,17 +91,59 @@ class PygameViewer:
 
         #add the text to the top right corner of the screen in green color
         font = pygame.font.SysFont(None, 24)
-        text = font.render(f"Time: {time} | Active Incomplete Tasks: {number_of_active_incomplete_tasks}", True, TEXT_COLOR)
+        text = font.render(f"Time: {time} | Active Incomplete Tasks: {number_of_active_incomplete_tasks}", True, TEXT_INFO_COLOR)
         self.screen.blit(text, (self.width - text.get_width() - 10, 10))
+
+    def add_debug_info(self):
+        font = pygame.font.SysFont(None, 20)
+        if 1 in debug_mode_settings: 
+            #show agent ids
+
+            #draw numbers on top of each agent and task to show their id
+            agent_id_locations = [(agent.id, agent.location) for agent in self.world.agents]
+            for agent_id, location in agent_id_locations:
+                x, y = location
+                text = font.render(str(agent_id), True, DEBUG_TEXT_COLOR)
+                self.screen.blit(text, (x*CELL_SIZE + 2, y*CELL_SIZE + 2))
+
+        if 2 in debug_mode_settings:
+            #draw numbers  on top of each agents goal location to show their current goal
+            agent_id_goal_locations = [(agent.id, agent.planner.current_goal) for agent in self.world.agents if agent.planner.current_goal is not None]
+            for agent_id, goal_location in agent_id_goal_locations:
+                x, y = goal_location
+                text = font.render(str(agent_id), True, DEBUG_TEXT_COLOR)
+                self.screen.blit(text, (x*CELL_SIZE + 2, y*CELL_SIZE + 2))
+
+        if 3 in debug_mode_settings:
+            #show the task ids on top of each task
+            task_id_locations = [(task.id, task.location) for task in self.world.tasks if task.spawned and not task.completed]
+            for task_id, location in task_id_locations:
+                x, y = location
+                text = font.render(str(task_id), True, DEBUG_TEXT_COLOR)
+                self.screen.blit(text, (x*CELL_SIZE + 2, y*CELL_SIZE + 2))
+
+        if 4 in debug_mode_settings:
+            #show a list of all agents and their current task_queues in the top left corner of the screen
+            agent_task_queues = [(agent.id, agent.planner.current_queue) for agent in self.world.agents if agent.planner.current_queue]
+
+            for agent_id, task_queue in agent_task_queues:
+                task_ids = [task.id for task, _ in task_queue]
+                text = font.render(f"Agent {agent_id}: {task_ids}", True, DEBUG_TEXT_COLOR)
+                self.screen.blit(text, (10, 30 + agent_id * 20))
+            
+            
 
             
     def render(self):
         self.screen.fill(BACKGROUND_COLOR)
-        self.draw_walls()
         self.draw_grid()
+        self.draw_walls()
         self.draw_tasks()
         self.draw_agents()
-        self.add_text_info()
+        if basic_sim_info:
+            self.add_text_info()
+        if debug_mode:
+            self.add_debug_info()
         pygame.display.flip()
     
     def run(self, step_callback, max_steps=100, fps=10):
