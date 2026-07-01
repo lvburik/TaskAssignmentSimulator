@@ -4,8 +4,8 @@ from pathfinding.to_direction import ToDirection
 from pathfinding.distancefinder import BulkDistanceFinder
 
 class TheoryOfMindPlanner(Planner):
-    def __init__(self, pathfinding_algorithm=None, communication = None):
-        super().__init__(pathfinding_algorithm, communication)
+    def __init__(self, pathfinding_algorithm=None):
+        super().__init__(pathfinding_algorithm)
 
         self.beliefs = {}  # Placeholder for beliefs about other agents
         self.current_task_queue = None
