@@ -43,9 +43,11 @@ class AuctionPlanner(Planner):
 
         self._update_distance_to_first_task_in_queue()
 
+        self._create_greedy_queue(incomplete_tasks)
+
         self._insert_tasks_into_queue(incomplete_tasks)
 
-        self._create_greedy_queue(incomplete_tasks)
+        
 
         self._configure_bids()
 
@@ -177,14 +179,14 @@ class AuctionPlanner(Planner):
         message_bus.publish(messages.Message(
             sender=self.agent_id,
             topic="auction",
-            payload={"type":"bid", "task_id": task_id, "agent_id": self.agent_id, "completion_time": bid_value}
+            payload={"type":"bid", "task_id": task_id, "agent_id": self.agent_id, "completion_time": bid_value, "current_time": self.world_time}
         ))
                   
     def _release_bid(self, task_id):
         message_bus.publish(messages.Message(
             sender=self.agent_id,
             topic="auction",
-            payload={"type": "release", "task_id": task_id, "agent_id": self.agent_id}
+            payload={"type": "release", "task_id": task_id, "agent_id": self.agent_id, "current_time": self.world_time}
         ))
 
     def _process_received_messages(self):
@@ -195,19 +197,21 @@ class AuctionPlanner(Planner):
             task_id = bid_msg[3]["task_id"]
             agent_id = bid_msg[3]["agent_id"]
             completion_time = bid_msg[3]["completion_time"]
+            msg_time = bid_msg[3]["current_time"]
 
             if task_id not in self.task_bids:
-                self.task_bids[task_id] = [agent_id, completion_time]
+                self.task_bids[task_id] = [agent_id, completion_time, msg_time]
             else:
-                claimed_agent_id, current_best_time = self.task_bids[task_id]
-                if completion_time < current_best_time or claimed_agent_id == agent_id:
-                    self.task_bids[task_id] = [agent_id, completion_time]
+                claimed_agent_id, current_best_time, claim_time = self.task_bids[task_id]
+                if (completion_time < current_best_time or claimed_agent_id == agent_id) and msg_time >= claim_time:
+                    self.task_bids[task_id] = [agent_id, completion_time, msg_time]
 
         for release_msg in recieved_releases:
             task_id = release_msg[3]["task_id"]
             agent_id = release_msg[3]["agent_id"]
+            msg_time = release_msg[3]["current_time"]
 
-            if self.task_bids.get(task_id) and self.task_bids[task_id][0] == agent_id:
+            if self.task_bids.get(task_id) and self.task_bids[task_id][0] == agent_id and msg_time >= self.task_bids[task_id][2]:  # Ensure the release is processed after the claim
                 del self.task_bids[task_id]
 
         #clear the received messages after processing
