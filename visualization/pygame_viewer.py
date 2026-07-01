@@ -9,12 +9,12 @@ AGENT_COLOR = (0, 100, 155)
 
 TASK_COLOR = (155, 50, 0)
 
-TEXT_INFO_COLOR = (0, 255, 0)
+TEXT_INFO_COLOR = (150, 150, 0)
 DEBUG_TEXT_COLOR = (255, 255, 255)
 
 basic_sim_info = True
 debug_mode = True
-debug_mode_settings = (1, 3, 4) #1 = show agent ids, 2 = show agent goal locations, 3 = show task ids, 4 = show agent task queues
+debug_mode_settings = [4] #1 = show agent ids, 2 = show agent goal locations, 3 = show task ids, 4 = show agent task queues
 
 class PygameViewer:
     def __init__(self, world):
@@ -124,7 +124,12 @@ class PygameViewer:
 
         if 4 in debug_mode_settings:
             #show a list of all agents and their current task_queues in the top left corner of the screen
-            agent_task_queues = [(agent.id, agent.planner.current_queue) for agent in self.world.agents if agent.planner.current_queue]
+            agent_task_queues = []
+            for agent in self.world.agents:
+                if agent.planner.current_queue:
+                    agent_task_queues.append((agent.id, agent.planner.current_queue))
+                else: 
+                    agent_task_queues.append((agent.id, []))
 
             for agent_id, task_queue in agent_task_queues:
                 task_ids = [task.id for task, _ in task_queue]
