@@ -1,6 +1,6 @@
 from planners.class_definition import Planner
 
-from pathfinding.distancefinder import BulkDistanceFinder
+from pathfinding.distancefinder import FindClosestGoal
 from pathfinding.to_direction import ToDirection
 
 class GreedyTaskSelector(Planner):
@@ -16,14 +16,12 @@ class GreedyTaskSelector(Planner):
 
         task_locations = [task.location for task in self.tasks if not task.completed and task.spawn_time <= observation["time"]]
 
-        goal_distances = BulkDistanceFinder(self.world_map, self.agent_location, task_locations)
+        goal, _ = FindClosestGoal(self.world_map, self.agent_location, task_locations)
         
-        if not goal_distances:
+        if not goal:
             return  # No available tasks to select
         
-        self.current_goal =  _select_closest_goal(goal_distances)
-        
-        pass
+        self.current_goal =  goal
 
     def act(self):
         if self.current_goal is None:

@@ -9,6 +9,8 @@ AGENT_COLOR = (0, 200, 255)
 
 TASK_COLOR = (255, 100, 0)
 
+TEXT_COLOR = (0, 255, 0)
+
 class PygameViewer:
     def __init__(self, world):
         self.world = world
@@ -78,12 +80,23 @@ class PygameViewer:
                 (x*CELL_SIZE + 4, y*CELL_SIZE + 4, CELL_SIZE - 8, CELL_SIZE - 8)
                 )
             
+    def add_text_info(self):
+        time = self.world.time
+        number_of_active_incomplete_tasks = len([task for task in self.world.tasks if task.spawned and not task.completed])
+
+        #add the text to the top right corner of the screen in green color
+        font = pygame.font.SysFont(None, 24)
+        text = font.render(f"Time: {time} | Active Incomplete Tasks: {number_of_active_incomplete_tasks}", True, TEXT_COLOR)
+        self.screen.blit(text, (self.width - text.get_width() - 10, 10))
+
+            
     def render(self):
         self.screen.fill(BACKGROUND_COLOR)
         self.draw_walls()
         self.draw_grid()
         self.draw_tasks()
         self.draw_agents()
+        self.add_text_info()
         pygame.display.flip()
     
     def run(self, step_callback, max_steps=100, fps=10):

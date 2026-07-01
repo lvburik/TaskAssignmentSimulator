@@ -1,5 +1,5 @@
 number_of_agents = [10]
-planner_algorithm = ["AuctionPlanner"]
+planner_algorithm = ["TheoryOfMindPlanner"]
 pathfinding_algorithm = ["DoubleDijkstra"]
 world_map = ["Map14.png"]
 number_of_tasks = [1000]

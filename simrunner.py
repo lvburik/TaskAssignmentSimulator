@@ -17,7 +17,8 @@ from communication.bus import MessageBus
 from world import World
 from datalogger import DataLogger
 
-max_fps = 15
+max_fps = 30
+status_updates = True # Set to True to enable status updates during simulation
 
 def _resolve_planner(planner_algorithm):
     if isinstance(planner_algorithm, str):
@@ -74,5 +75,5 @@ def engine(steps, visualization, logger: DataLogger, world):
     for _ in range(steps):
         world.step(logger)
         
+        
 
-    
