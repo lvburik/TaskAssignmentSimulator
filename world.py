@@ -6,6 +6,10 @@ import task
 
 from datalogger import DataLogger
 
+task_spawn_messages = False # Set to True to enable warnings for task spawn issues
+task_completion_messages = False # Set to True to enable warnings for task completion issues
+status_updates = True # Set to True to enable status updates during simulation
+
 class World:
     def __init__(self, map_file_name, agents: list[agent.Agent], tasks: list[task.Task]):
         self.agents = agents
@@ -38,7 +42,9 @@ class World:
         if isinstance(logger, DataLogger):
             logger.log(self.get_state())
 
+        status_update(self, self.time)
         self.time += 1
+
 
     def _load_map(self, map_file_name):
         if not os.path.isabs(map_file_name):
@@ -85,7 +91,7 @@ class World:
         for sim_task in self.tasks:
             if sim_task.location == sim_agent.location and not sim_task.completed:
                 sim_task.completed = True
-                print(f"Task {sim_task.id} completed at time {self.time}.")
+                if task_completion_messages: print(f"Task {sim_task.id} completed at time {self.time}.")
                 return
         print(f"No task to complete for agent {sim_agent.id} at location {sim_agent.location}.")
 
@@ -125,7 +131,7 @@ class World:
                 task.spawned = True
 
                 self._spawn_task(task)
-                print(f"Task {task.id} spawned at time {current_time}.")
+                if task_spawn_messages: print(f"Task {task.id} spawned at time {current_time}.")
         
     def _spawn_task(self, sim_task: task.Task):
         free_cells = self._free_cells()
@@ -168,4 +174,8 @@ class World:
             "map_height": self.height,
         }
         
+def status_update(world, step):
+    if status_updates:
+        if step % 10 == 0:
+            print(f"Simulation progress: {step} steps completed. Number_of_incomplete_tasks: {len([task for task in world.tasks if not task.completed and task.spawned])}")
     

@@ -2,8 +2,8 @@ from planners.class_definition import Planner
 import random
 
 class RandomMovesPlanner(Planner):
-    def __init__(self, pathfinding_algorithm=None, communication = None):
-        super().__init__(pathfinding_algorithm, communication)
+    def __init__(self, pathfinding_algorithm=None):
+        super().__init__(pathfinding_algorithm)
 
     def update_plan(self, observation: dict):
         # Implement the logic to update the plan based on the world state

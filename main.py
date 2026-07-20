@@ -1,10 +1,10 @@
-number_of_agents = [5]
-planner_algorithm = ["AuctionPlanner"]
+number_of_agents = [10]
+planner_algorithm = ["TheoryOfMindPlanner"]
 pathfinding_algorithm = ["DoubleDijkstra"]
 world_map = ["Map14.png"]
-number_of_tasks = [100]
-Simulation_seeds = [1]
-simulation_timesteps = [100]
+number_of_tasks = [1000]
+Simulation_seeds = [3876428754]
+simulation_timesteps = [1000]
 
 visualization = True
 
