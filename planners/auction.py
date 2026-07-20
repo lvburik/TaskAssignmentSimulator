@@ -22,8 +22,6 @@ class AuctionPlanner(Planner):
 
         self.task_bids = {}
 
-        self.my_bids = {}
-
         self.current_queue = []
         self.current_goal = None
         
@@ -47,11 +45,11 @@ class AuctionPlanner(Planner):
 
         self._insert_tasks_into_queue(incomplete_tasks)
 
-        
-
         self._configure_bids()
 
-        self._publish_bids()
+        self._clean_up_bid_database(observation)
+
+        self._send_bid_database()
 
         if self.current_queue:
             self.current_goal = self.current_queue[0][0].location
@@ -125,6 +123,8 @@ class AuctionPlanner(Planner):
                 #check if a lower bid for the task already exists, if so, don't add it to the queue
 
                 if not self._should_insert_task(task, canidate_task, distance):
+                    task = queue_entry[0]
+                    start_location = task.location  # Update the start location for the next task
                     continue  # Skip adding this task to the queue
 
                 #insert task into the queue at the current position and remove all entries after it, as they are no longer valid
@@ -140,7 +140,7 @@ class AuctionPlanner(Planner):
         if canidate_task.id not in self.task_bids:
             return True
 
-        if self._compute_bid(prior_task, canidate_distance) < self.task_bids[canidate_task.id][1]:
+        if self._compute_bid(prior_task, canidate_distance) < self.task_bids[canidate_task.id][2]:
             return True
         
         return False
@@ -159,63 +159,68 @@ class AuctionPlanner(Planner):
 
     def _configure_bids(self):
         prior_task = None
+
+        #update bids
         for task, distance in self.current_queue:
-            self.my_bids[task.id] = self._compute_bid(prior_task, distance)
+            bid = (task.id, self.agent_id, self._compute_bid(prior_task, distance), self.world_time)
+            
+            if self._is_this_bid_better(bid):
+                self.task_bids[task.id] = bid
+
             prior_task = task
 
-    def _publish_bids(self):
-        queue_task_ids = [task.id for task, _ in self.current_queue]
-        for task_id, bid_value in self.my_bids.items():
-            if task_id in queue_task_ids:
-                self._publish_bid(task_id, bid_value)
-            else:
-                # If the task is no longer in the queue, publish a high bid to indicate disinterest
-                self._release_bid(task_id)        
+        #update releases
+        for (task_id, winner_id, _, _) in self.task_bids.values():
+            if winner_id == self.agent_id:
+                task_in_queue = False
+                for task, _ in self.current_queue:
+                    if task.id == task_id:
+                        task_in_queue = True
+                        break
 
+                if task_in_queue == False:
+                    #release this bid
+                    self.task_bids[task_id] = (task_id, self.agent_id, float('inf'), self.world_time)
+                
     def _on_task(self, message: messages.Message) -> None:
         self.received_messages.append(("topic", message.sender, message.topic, message.payload))
+             
+    def _send_bid_database(self):
+        task_database = self.task_bids
 
-    def _publish_bid(self, task_id, bid_value):
         message_bus.publish(messages.Message(
             sender=self.agent_id,
             topic="auction",
-            payload={"type":"bid", "task_id": task_id, "agent_id": self.agent_id, "completion_time": bid_value, "current_time": self.world_time}
+            payload={"task_db": task_database, "current_t": self.world_time}
         ))
-                  
-    def _release_bid(self, task_id):
-        message_bus.publish(messages.Message(
-            sender=self.agent_id,
-            topic="auction",
-            payload={"type": "release", "task_id": task_id, "agent_id": self.agent_id, "current_time": self.world_time}
-        ))
+        
 
     def _process_received_messages(self):
-        recieved_bids = [msg for msg in self.received_messages if msg[2] == "auction" and msg[3]["type"] == "bid"]
-        recieved_releases = [msg for msg in self.received_messages if msg[2] == "auction" and msg[3]["type"] == "release"]
-
-        for bid_msg in recieved_bids:
-            task_id = bid_msg[3]["task_id"]
-            agent_id = bid_msg[3]["agent_id"]
-            completion_time = bid_msg[3]["completion_time"]
-            msg_time = bid_msg[3]["current_time"]
-
-            if task_id not in self.task_bids:
-                self.task_bids[task_id] = [agent_id, completion_time, msg_time]
-            else:
-                claimed_agent_id, current_best_time, claim_time = self.task_bids[task_id]
-                if (completion_time < current_best_time or claimed_agent_id == agent_id) and msg_time >= claim_time:
-                    self.task_bids[task_id] = [agent_id, completion_time, msg_time]
-
-        for release_msg in recieved_releases:
-            task_id = release_msg[3]["task_id"]
-            agent_id = release_msg[3]["agent_id"]
-            msg_time = release_msg[3]["current_time"]
-
-            if self.task_bids.get(task_id) and self.task_bids[task_id][0] == agent_id and msg_time >= self.task_bids[task_id][2]:  # Ensure the release is processed after the claim
-                del self.task_bids[task_id]
-
+    
+        for message in self.received_messages:
+            for bid in message[3]["task_db"].values():
+                if self._is_this_bid_better(bid):
+                    self.task_bids[bid[0]] = bid
+        
         #clear the received messages after processing
         self.received_messages.clear()
+
+    def _is_this_bid_better(self, bid):
+        (task_id, bid_publisher, bid_value, bid_time) = bid
+
+        if task_id not in self.task_bids.keys():
+            return True #no bid yet so automatic win
+        
+        (_, current_winner, current_winning_bid, current_bid_time) = self.task_bids[task_id]
+
+        if current_winning_bid > bid_value:
+            return True #new bid is better
+
+        if current_winner == bid_publisher:
+            if bid_time > current_bid_time:
+                return True #same owner, bid can be updated
+        
+        return False
 
     def _compute_bid(self, prior_task: Task | None, canidate_distance: int):
         bid = 0.001 * self.agent_id
@@ -227,3 +232,13 @@ class AuctionPlanner(Planner):
                     break
 
         return bid + canidate_distance + self.world_time
+    
+    def _clean_up_bid_database(self, observation):
+        tasks = observation["tasks"]
+
+        for task in tasks:
+            if task.completed == True:
+                if task.id in self.task_bids.keys():
+                    #remove from the list
+                    self.task_bids.pop(task.id)
+
