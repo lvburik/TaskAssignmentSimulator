@@ -22,6 +22,11 @@ def euclidean_distance(a: Position, b: Position) -> float:
 	"""Compute Euclidean distance between two positions."""
 	return dist(a, b)
 
+def position_resolver(agent_id, world):
+	for agent in world.agents:
+		if agent.id == agent_id:
+			return agent.location
+	
 
 @dataclass
 class LimitedRangePolicy:
@@ -32,10 +37,21 @@ class LimitedRangePolicy:
 	"""
 
 	max_distance: float
-	position_resolver: PositionResolver
+	
 	allow_when_unknown: bool = True
 	distance_fn: Callable[[Position, Position], float] = euclidean_distance
 
+	
+
 	def __call__(self, message: Message, recipient: Optional[Any], world) -> bool:
-		print("policy_called")
-		return True
+		sender = message.sender
+		sender_location = position_resolver(sender, world)
+
+		recipient_location = position_resolver(recipient, world)
+
+		#print(f"policy called for message sent by {sender} at {sender_location} to {recipient} at {recipient_location}")
+
+		distance = euclidean_distance(sender_location, recipient_location)
+
+
+		return distance < self.max_distance

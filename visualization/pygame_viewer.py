@@ -14,7 +14,7 @@ DEBUG_TEXT_COLOR = (255, 255, 255)
 
 basic_sim_info = True
 debug_mode = True
-debug_mode_settings = [] #1 = show agent ids, 2 = show agent goal locations, 3 = show task ids, 4 = show agent task queues
+debug_mode_settings = [4] #1 = show agent ids, 2 = show agent goal locations, 3 = show task ids, 4 = show agent task queues
 
 class PygameViewer:
     def __init__(self, world):

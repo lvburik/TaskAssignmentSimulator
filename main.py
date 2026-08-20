@@ -1,3 +1,4 @@
+
 number_of_agents = [10]
 planner_algorithm = ["Auction"]
 pathfinding_algorithm = ["DoubleDijkstra"]
@@ -19,12 +20,14 @@ import os
 
 from datalogger import DataLogger
 
+from communication.policies import LimitedRangePolicy
+message_policy = [LimitedRangePolicy(max_distance=15)]
 
 def _resolve_world_map_path(map_name: str) -> str:
     return os.path.join(os.path.dirname(__file__), "maps", map_name)
 
 def main():
-    number_of_simulations = len(number_of_agents) * len(planner_algorithm) * len(pathfinding_algorithm) * len(world_map) * len(number_of_tasks) * len(Simulation_seeds) * len(simulation_timesteps)
+    number_of_simulations = len(number_of_agents) * len(planner_algorithm) * len(pathfinding_algorithm) * len(world_map) * len(number_of_tasks) * len(Simulation_seeds) * len(simulation_timesteps) * len(message_policy)
 
     for ii in range(number_of_simulations):
         # Calculate the indices for each parameter based on the current simulation index
@@ -35,6 +38,7 @@ def main():
         idx_tasks = (ii // (len(number_of_agents) * len(planner_algorithm) * len(pathfinding_algorithm) * len(world_map))) % len(number_of_tasks)
         idx_seed = (ii // (len(number_of_agents) * len(planner_algorithm) * len(pathfinding_algorithm) * len(world_map) * len(number_of_tasks))) % len(Simulation_seeds)
         idx_timesteps = (ii // (len(number_of_agents) * len(planner_algorithm) * len(pathfinding_algorithm) * len(world_map) * len(number_of_tasks) * len(Simulation_seeds))) % len(simulation_timesteps)
+        idx_policies =  (ii // (len(number_of_agents) * len(planner_algorithm) * len(pathfinding_algorithm) * len(world_map) * len(number_of_tasks) * len(Simulation_seeds) * len(simulation_timesteps))) % len(message_policy)
 
         # Get the current parameters for this simulation
         current_number_of_agents = number_of_agents[idx_agents]
@@ -44,6 +48,7 @@ def main():
         current_number_of_tasks = number_of_tasks[idx_tasks]
         current_simulation_seed = Simulation_seeds[idx_seed]
         current_simulation_timesteps = simulation_timesteps[idx_timesteps]
+        current_message_policy = message_policy[idx_policies]
 
         random.seed(current_simulation_seed)  # Set the random seed for reproducibility
 
@@ -55,6 +60,7 @@ def main():
             current_planner_algorithm,
             current_pathfinding_algorithm,
             current_simulation_timesteps,
+            current_message_policy
         )
 
         logger = None

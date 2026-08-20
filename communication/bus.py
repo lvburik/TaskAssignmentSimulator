@@ -43,7 +43,7 @@ class MessageBus:
 
 	def _delivery_allowed(self, message: Message, recipient: Optional[Any]) -> bool:
 		for policy in self._policies:
-			if not policy(message, recipient):
+			if not policy(message, recipient, self.world):
 				return False
 		return True
 
@@ -134,7 +134,7 @@ class MessageBus:
 			for cb, subscriber_id in list(self._topics.get(message.topic, [])):
 				recipient = message.recipient
 				if recipient is None:
-					recipient = subscriber_id or self._infer_callback_recipient(cb)
+					recipient = subscriber_id
 				if self._delivery_allowed(message, recipient):
 					cb(message)
 

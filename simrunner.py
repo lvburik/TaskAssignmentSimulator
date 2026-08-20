@@ -13,7 +13,7 @@ from pathfinding.Double_Dijkstra import DoubleDijkstraPlanner
 from pathfinding.AStar import AStarPlanner
 
 from communication.bus import MessageBus
-from communication.policies import LimitedRangePolicy
+
 
 from world import World
 from datalogger import DataLogger
@@ -45,26 +45,18 @@ def _resolve_pathfinding(pathfinding_algorithm):
         return pathfinders[pathfinding_algorithm]
     return pathfinding_algorithm
 
-def _resolve_messagepolicies(message_policy):
-    if isinstance(message_policy, str):
-        policies = {
-            "range": LimitedRangePolicy,
-        }
-        if message_policy not in policies:
-            raise ValueError(f"Unsupported message policy: {message_policy}")
-        return policies[message_policy]
-    return message_policy
 
-def init(world_map, number_of_agents, number_of_tasks, planner_algorithm, pathfinding_algorithm, steps, message_policy = "range"):
+
+def init(world_map, number_of_agents, number_of_tasks, planner_algorithm, pathfinding_algorithm, steps, message_policy):
     planner_cls = _resolve_planner(planner_algorithm)
     pathfinding_method = _resolve_pathfinding(pathfinding_algorithm)
-    message_plcy = _resolve_messagepolicies(message_policy)
+   
 
     world = World(world_map)
 
     message_bus = MessageBus()
     message_bus.add_world(world)
-    message_bus.add_policy(message_plcy)
+    message_bus.add_policy(message_policy)
     
     for ii in range(number_of_agents):
         planner = planner_cls(pathfinding_method, agent_id = ii, messagebus = message_bus)
