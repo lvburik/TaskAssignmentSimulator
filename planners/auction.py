@@ -9,16 +9,17 @@ from task import Task
 #based on CBBA?
 
 class AuctionPlanner(Planner):
-    def __init__(self, pathfinding_algorithm=None):
-        super().__init__(pathfinding_algorithm)
+    def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
+        super().__init__(pathfinding_algorithm, agent_id, messagebus)
 
         if 'message_bus' not in globals():
             global message_bus
-            message_bus = MessageBus()
+            message_bus = messagebus
 
+       
         self.received_messages = []
 
-        message_bus.subscribe(self._on_task, topic = "auction")
+        message_bus.subscribe(self._on_task, topic = "auction", subscriber_id = agent_id)
 
         self.task_bids = {}
 

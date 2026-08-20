@@ -13,20 +13,20 @@ from pathfinding.Double_Dijkstra import DoubleDijkstraPlanner
 from pathfinding.AStar import AStarPlanner
 
 from communication.bus import MessageBus
+from communication.policies import LimitedRangePolicy
 
 from world import World
 from datalogger import DataLogger
 
 max_fps = 30
-status_updates = True # Set to True to enable status updates during simulation
 
 def _resolve_planner(planner_algorithm):
     if isinstance(planner_algorithm, str):
         planners = {
-            "RandomMovesPlanner": RandomMovesPlanner,
-            "GreedyTaskSelector": GreedyTaskSelector,
-            "TheoryOfMindPlanner": TheoryOfMindPlanner,
-            "AuctionPlanner": AuctionPlanner,
+            "Random": RandomMovesPlanner,
+            "Greedy": GreedyTaskSelector,
+            "Tom": TheoryOfMindPlanner,
+            "Auction": AuctionPlanner,
         }
         if planner_algorithm not in planners:
             raise ValueError(f"Unsupported planner algorithm: {planner_algorithm}")
@@ -45,25 +45,36 @@ def _resolve_pathfinding(pathfinding_algorithm):
         return pathfinders[pathfinding_algorithm]
     return pathfinding_algorithm
 
-def init(world_map, number_of_agents, number_of_tasks, planner_algorithm, pathfinding_algorithm, steps):
+def _resolve_messagepolicies(message_policy):
+    if isinstance(message_policy, str):
+        policies = {
+            "range": LimitedRangePolicy,
+        }
+        if message_policy not in policies:
+            raise ValueError(f"Unsupported message policy: {message_policy}")
+        return policies[message_policy]
+    return message_policy
+
+def init(world_map, number_of_agents, number_of_tasks, planner_algorithm, pathfinding_algorithm, steps, message_policy = "range"):
     planner_cls = _resolve_planner(planner_algorithm)
     pathfinding_method = _resolve_pathfinding(pathfinding_algorithm)
+    message_plcy = _resolve_messagepolicies(message_policy)
 
-    bus = MessageBus()
-    recieved_messages = []
+    world = World(world_map)
 
-    agents = []
-    for ii in range(number_of_agents):
-        planner = planner_cls(pathfinding_method, (bus, recieved_messages))
-        agents.append(agent.Agent(id=ii, planner=planner))
-
-    tasks = []
-    for ii in range(number_of_tasks):
-        tasks.append(task.Task(id=ii, spawn_time=random.randint(0, steps - 1)))
+    message_bus = MessageBus()
+    message_bus.add_world(world)
+    message_bus.add_policy(message_plcy)
     
+    for ii in range(number_of_agents):
+        planner = planner_cls(pathfinding_method, agent_id = ii, messagebus = message_bus)
+        world.add_agent(agent.Agent(id=ii, planner=planner))
 
+    
+    for ii in range(number_of_tasks):
+        world.add_task(task.Task(id=ii, spawn_time=random.randint(0, steps - 1)))
 
-    return World(world_map, agents, tasks)
+    return world
     
 def engine(steps, visualization, logger: DataLogger, world):
     

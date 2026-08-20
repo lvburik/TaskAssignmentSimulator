@@ -1,10 +1,11 @@
 number_of_agents = [10]
-planner_algorithm = ["TheoryOfMindPlanner"]
+planner_algorithm = ["Auction"]
 pathfinding_algorithm = ["DoubleDijkstra"]
 world_map = ["Map14.png"]
-number_of_tasks = [1000]
+
 Simulation_seeds = [3876428754]
-simulation_timesteps = [1000]
+simulation_timesteps = [500]
+number_of_tasks = simulation_timesteps  # Set number_of_tasks equal to simulation_timesteps
 
 visualization = True
 

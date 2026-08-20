@@ -11,26 +11,38 @@ task_completion_messages = False # Set to True to enable warnings for task compl
 status_updates = True # Set to True to enable status updates during simulation
 
 class World:
-    def __init__(self, map_file_name, agents: list[agent.Agent], tasks: list[task.Task]):
-        self.agents = agents
-        self.tasks = tasks
+    def __init__(self, map_file_name):
         self.time = 0
-
+        self.agents = []
+        self.tasks = []
         self.map_file_name = map_file_name
         self.map = self._load_map(map_file_name)
         self.height = len(self.map)
         self.width = len(self.map[0]) if self.height > 0 else 0
 
+    def add_agent(self, agent):
+        #put agent in a random position
+        agent.location = self._random_empty_cell()
+
+        self.agents.append(agent)
+        
+
+
+    def add_task(self, task):
+        #put the task in a random position
+        task.location = self._random_empty_cell()
+
+        self.tasks.append(task)
+
+    def _random_empty_cell(self):
         free_cells = self._free_cells()
-        if len(free_cells) < len(self.agents) + len(self.tasks):
-            raise ValueError("Map does not have enough free cells for agents and tasks.")
 
-        random.shuffle(free_cells)
-        for idx, sim_agent in enumerate(self.agents):
-            sim_agent.location = free_cells[idx]
+        if not free_cells:
+            raise ValueError("Map does not have free cells")
 
-        for idx, sim_task in enumerate(self.tasks):
-            sim_task.location = free_cells[len(self.agents) + idx]
+        return random.choice(free_cells)
+
+        
 
     def step(self, logger: DataLogger | None = None):
         self._update_tasks(self.time)

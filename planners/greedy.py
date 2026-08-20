@@ -4,10 +4,11 @@ from pathfinding.distancefinder import FindClosestGoal
 from pathfinding.to_direction import ToDirection
 
 class GreedyTaskSelector(Planner):
-    def __init__(self, pathfinding_algorithm=None, communication = None):
-        super().__init__(pathfinding_algorithm, communication)
+    def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
+        super().__init__(pathfinding_algorithm, agent_id, messagebus)
 
         self.current_goal = None 
+        
 
     def update_plan(self, observation: dict):
         self.tasks = observation["tasks"]
@@ -22,6 +23,7 @@ class GreedyTaskSelector(Planner):
             return  # No available tasks to select
         
         self.current_goal =  goal
+        
 
     def act(self):
         if self.current_goal is None:
