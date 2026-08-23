@@ -1,10 +1,10 @@
 
-number_of_agents = [10]
+number_of_agents = [20]
 planner_algorithm = ["Auction"]
 pathfinding_algorithm = ["DoubleDijkstra"]
 world_map = ["Map14.png"]
 
-Simulation_seeds = [3876428754]
+Simulation_seeds = [356]
 simulation_timesteps = [500]
 number_of_tasks = simulation_timesteps  # Set number_of_tasks equal to simulation_timesteps
 
@@ -21,7 +21,7 @@ import os
 from datalogger import DataLogger
 
 from communication.policies import LimitedRangePolicy
-message_policy = [LimitedRangePolicy(max_distance=15)]
+message_policy = [LimitedRangePolicy(max_distance=50)]
 
 def _resolve_world_map_path(map_name: str) -> str:
     return os.path.join(os.path.dirname(__file__), "maps", map_name)
