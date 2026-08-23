@@ -33,22 +33,21 @@ class DistanceFinder:
                 return self.node_locations[node]
                 
 
-    def findclosestgoal(self, start, goals, max_distance = float("inf")):
+    def findclosestgoal(self, start, goals, max_distance=float("inf")):
         if not goals:
             return None, float("inf")
 
-        distances = self.get_distances(start, goals)
-
-        min_distance = float("inf")
         closest_goal = None
+        min_distance = float("inf")
 
-        for goal_id, distance in enumerate(distances):
+        for goal in goals:
+            distance = self.get_distance(start, goal)
             if distance < min_distance:
-                closest_goal = goals[goal_id]
+                closest_goal = goal
                 min_distance = distance
 
-        if min_distance <= max_distance:
-            return closest_goal, distance
+        if closest_goal is not None and min_distance <= max_distance:
+            return closest_goal, min_distance
 
         return None, float("inf")
 
