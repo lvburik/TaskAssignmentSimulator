@@ -6,6 +6,8 @@ class Agent:
         self.id = id
         self.location = None
         self.planner = planner
+        # Expose the owning agent id on the planner for communication policies.
+        self.planner.agent_id = id
         self.plan = None
         
         
