@@ -1,7 +1,7 @@
 from planners.class_definition import Planner
 
 from pathfinding.to_direction import ToDirection
-from pathfinding.distancefinder import BulkDistanceFinder
+
 
 class TheoryOfMindPlanner(Planner):
     def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
@@ -47,9 +47,9 @@ class TheoryOfMindPlanner(Planner):
             return "perform_task"  # Placeholder action when at the goal
         
         else: 
-            path = self.pathfinding_algorithm(self.agent_location, self.current_goal, self.world_map)
-
-        return ToDirection(self.agent_location, path[1])  # Convert the next step in the path to a direction
+            next_location = self.pathfinding_algorithm.next_step(self.agent_location, self.current_goal)
+        
+        return ToDirection(self.agent_location, next_location)  # Convert the next step in the path to a direction
     
     def _initialize_beliefs(self, uncompleted_tasks: list):
         if not uncompleted_tasks:
@@ -91,13 +91,13 @@ class TheoryOfMindPlanner(Planner):
         
         my_location = observations["agent_location"]
 
-        my_distances = BulkDistanceFinder(self.world_map, my_location, [task.location for task in uncompleted_tasks])
+        my_distances = self.pathfinding_algorithm.get_distances(my_location, [task.location for task in uncompleted_tasks])
 
         other_agent_locations = observations["other_agent_locations"]
         other_agent_distances = {}
         
         for agent_id, agent_location in other_agent_locations:
-            distances = BulkDistanceFinder(self.world_map, agent_location, [task.location for task in uncompleted_tasks])
+            distances = self.pathfinding_algorithm.get_distances(agent_location, [task.location for task in uncompleted_tasks])
             other_agent_distances[agent_id] = distances
 
         first_task_in_queue = self.current_task_queue[0] if self.current_task_queue else None

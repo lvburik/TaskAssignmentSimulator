@@ -1,12 +1,56 @@
 import numpy as np
-import heapq
 
 class DistanceFinder:
     def __init__(self, map_matrix):
+        print("precalculating paths")
         
         self._create_connection_graph(map_matrix)
+        print("caching distances")
         
         self._cache_distances()   
+        print("ready")
+
+    def get_distance(self, start, goal):
+        start_node_id = self.location_dict[start]
+        goal_node_id = self.location_dict[goal]
+
+        return self.distances[start_node_id][goal_node_id]
+
+    def get_distances(self, start, goals):
+        return [self.get_distance(start, goal) for goal in goals]
+
+    def next_step(self, agent_location, goal_location):
+
+        agent_node_id = self.location_dict[agent_location]
+        goal_node_id = self.location_dict[goal_location]
+
+        neighbor_nodes = np.where(self.connection_graph[agent_node_id] != 0)[0]
+
+        current_distance = self.distances[agent_node_id][goal_node_id]
+
+        for node in neighbor_nodes:
+            if self.distances[node][goal_node_id] == current_distance-1:
+                return self.node_locations[node]
+                
+
+    def findclosestgoal(self, start, goals, max_distance = float("inf")):
+        if not goals:
+            return None, float("inf")
+
+        distances = self.get_distances(start, goals)
+
+        min_distance = float("inf")
+        closest_goal = None
+
+        for goal_id, distance in enumerate(distances):
+            if distance < min_distance:
+                closest_goal = goals[goal_id]
+                min_distance = distance
+
+        if min_distance <= max_distance:
+            return closest_goal, distance
+
+        return None, float("inf")
 
     def _create_connection_graph(self, map_matrix):
         map_matrix = np.matrix(map_matrix)
@@ -17,10 +61,10 @@ class DistanceFinder:
         self.location_dict = {}
         self.node_locations = []
 
-        for x in range(self.map_shape[0]):
-            for y in range(self.map_shape[1]):
-                if map_matrix[x, y] == 0: #node is walkable
-                    self.location_dict[(x, y)] = y*x + x
+        for y in range(self.map_shape[0]):
+            for x in range(self.map_shape[1]):
+                if map_matrix[y, x] == 0: #node is walkable
+                    self.location_dict[(x, y)] = len(self.node_locations)
                     self.node_locations.append(np.array([x, y]))
                     
         self.number_of_nodes = len(self.node_locations)
@@ -32,8 +76,6 @@ class DistanceFinder:
                 graph_matrix[start_node][end_node] = np.linalg.norm(self.node_locations[end_node] - self.node_locations[start_node]) == 1
 
         self.connection_graph = graph_matrix
-
-    
 
     def _cache_distances(self):
         distances = np.zeros((self.number_of_nodes, self.number_of_nodes), int)
@@ -59,16 +101,5 @@ class DistanceFinder:
                     open_set.append(neighbor)          
                 
         self.distances = distances
-
-
-                
-map = [[0, 0, 0, 0],[1, 1, 0, 1],[0, 1, 0, 0],[1, 1, 1, 0], [0, 0, 0, 0]]            
-
-    
-
-
-
-A = DistanceFinder(map)
-print(A.location_dict)
 
         

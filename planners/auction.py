@@ -1,7 +1,5 @@
 from planners.class_definition import Planner
 from communication import messages
-from communication.bus import MessageBus
-from pathfinding.distancefinder import FindClosestGoal
 from pathfinding.to_direction import ToDirection
 
 from task import Task
@@ -26,15 +24,14 @@ class AuctionPlanner(Planner):
         
     def update_plan(self, observation: dict):
         self.agent_location = observation["agent_location"]
-        self.world_map = observation["map"]
         self.agent_id = observation["agent_id"]
         self.world_time = observation["time"]
 
         incomplete_tasks = [task for task in observation["tasks"] if not task.completed]
 
-        self._process_received_messages()
+        #self._process_received_messages()
 
-        self._remove_lost_tasks_from_queue()
+        #self._remove_lost_tasks_from_queue()
 
         self._clean_up_queue(incomplete_tasks)
 
@@ -44,11 +41,11 @@ class AuctionPlanner(Planner):
 
         self._insert_tasks_into_queue(incomplete_tasks)
 
-        self._configure_bids()
+        #self._configure_bids()
 
-        self._clean_up_bid_database(observation)
+        #self._clean_up_bid_database(observation)
 
-        self._send_bid_database()
+        #self._send_bid_database()
 
         if self.current_queue:
             self.current_goal = self.current_queue[0][0].location
@@ -56,21 +53,22 @@ class AuctionPlanner(Planner):
         
 
     def act(self):
+        
         if self.current_goal is None:
             return None  # Placeholder action when no goal is selected
         
         if self.agent_location == self.current_goal:
             return "perform_task"  # Placeholder action when at the goal
-        
-        else: 
-            path = self.pathfinding_algorithm(self.agent_location, self.current_goal, self.world_map)
 
-        return ToDirection(self.agent_location, path[1])  # Convert the next step in the path to a direction
+        else: 
+            next_location = self.pathfinding_algorithm.next_step(self.agent_location, self.current_goal)
+        
+        return ToDirection(self.agent_location, next_location)  # Convert the next step in the path to a direction
         
     def _update_distance_to_first_task_in_queue(self):
         if self.current_queue:
             first_task, _ = self.current_queue[0]
-            distance_to_first_task = FindClosestGoal(self.world_map, self.agent_location, [first_task.location])[1]
+            distance_to_first_task = self.pathfinding_algorithm.get_distance(self.agent_location, first_task.location)
 
             self.current_queue[0] = (first_task, distance_to_first_task + 1)  # add 1 to distance to account for the time it takes to perform the task
 
@@ -83,7 +81,7 @@ class AuctionPlanner(Planner):
             #find closest task to the last task in the queue or to the agent's location if the queue is empty
             last_location = self.current_queue[-1][0].location if self.current_queue else self.agent_location
 
-            closest_goal, distance_to_closest_goal = FindClosestGoal(self.world_map, last_location, list(new_task_locations.keys()))
+            closest_goal, distance_to_closest_goal = self.pathfinding_algorithm.findclosestgoal(last_location, list(new_task_locations.keys()))
 
             if closest_goal is None:
                 break  # No reachable tasks
@@ -115,7 +113,7 @@ class AuctionPlanner(Planner):
         for ii, queue_entry in enumerate(self.current_queue):
             distance = queue_entry[1]
 
-            canidate_goal_location, distance = FindClosestGoal(self.world_map, start_location, list(new_task_locations.keys()), max_distance=distance - 1)
+            canidate_goal_location, distance = self.pathfinding_algorithm.findclosestgoal(start_location, list(new_task_locations.keys()), max_distance = distance - 1)
 
             if canidate_goal_location is not None:
                 canidate_task = new_task_locations[canidate_goal_location]
@@ -127,7 +125,7 @@ class AuctionPlanner(Planner):
                     continue  # Skip adding this task to the queue
 
                 #insert task into the queue at the current position and remove all entries after it, as they are no longer valid
-                
+
                 self.current_queue = self.current_queue[:ii] + [(canidate_task, distance + 1)]  # add 1 to distance to account for the time it takes to perform the task
 
                 
@@ -139,6 +137,7 @@ class AuctionPlanner(Planner):
         if canidate_task.id not in self.task_bids:
             return True
 
+        #calculate bid and check if ours is lower
         if self._compute_bid(prior_task, canidate_distance) < self.task_bids[canidate_task.id][2]:
             return True
         
