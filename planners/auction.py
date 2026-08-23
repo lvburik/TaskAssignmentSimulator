@@ -29,9 +29,9 @@ class AuctionPlanner(Planner):
 
         incomplete_tasks = [task for task in observation["tasks"] if not task.completed]
 
-        #self._process_received_messages()
+        self._process_received_messages()
 
-        #self._remove_lost_tasks_from_queue()
+        self._remove_lost_tasks_from_queue()
 
         self._clean_up_queue(incomplete_tasks)
 
@@ -41,11 +41,11 @@ class AuctionPlanner(Planner):
 
         self._insert_tasks_into_queue(incomplete_tasks)
 
-        #self._configure_bids()
+        self._configure_bids()
 
-        #self._clean_up_bid_database(observation)
+        self._clean_up_bid_database(observation)
 
-        #self._send_bid_database()
+        self._send_bid_database()
 
         if self.current_queue:
             self.current_goal = self.current_queue[0][0].location
