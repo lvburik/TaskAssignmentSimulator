@@ -12,14 +12,12 @@ class AuctionPlanner(Planner):
     def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
         super().__init__(pathfinding_algorithm, agent_id, messagebus)
 
-        if 'message_bus' not in globals():
-            global message_bus
-            message_bus = messagebus
+        
+        self.message_bus = messagebus
 
-       
         self.received_messages = []
 
-        message_bus.subscribe(self._on_task, topic = "auction", subscriber_id = agent_id)
+        self.message_bus.subscribe(self._on_task, topic = "auction", subscriber_id = agent_id)
 
         self.task_bids = {}
 
@@ -189,7 +187,7 @@ class AuctionPlanner(Planner):
     def _send_bid_database(self):
         task_database = self.task_bids
 
-        message_bus.publish(messages.Message(
+        self.message_bus.publish(messages.Message(
             sender=self.agent_id,
             topic="auction",
             payload={"task_db": task_database, "current_t": self.world_time}
