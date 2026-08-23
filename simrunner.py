@@ -17,7 +17,7 @@ from communication.bus import MessageBus
 from world import World
 from datalogger import DataLogger
 
-max_fps = 8
+max_fps = 120
 
 def _resolve_planner(planner_algorithm):
     if isinstance(planner_algorithm, str):
