@@ -1,5 +1,5 @@
 
-number_of_agents = [5]
+number_of_agents = [20]
 planner_algorithm = ["Auction"]
 world_map = ["Map15.png"]
 
@@ -20,7 +20,7 @@ import os
 from datalogger import DataLogger
 
 from communication.policies import LimitedRangePolicy, AlwaysAllowPolicy, PartlyBrokenPolicy
-message_policy = [LimitedRangePolicy(max_distance=2)]
+message_policy = [PartlyBrokenPolicy(number_of_agents[0], 0.5)]  # Example: 50% of agents are broken
 
 def _resolve_world_map_path(map_name: str) -> str:
     return os.path.join(os.path.dirname(__file__), "maps", map_name)

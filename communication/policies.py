@@ -62,24 +62,24 @@ class LimitedRangePolicy:
 
 		return distance < self.max_distance
 
-	class AlwaysAllowPolicy:
-		"""Always allow message delivery."""
+class AlwaysAllowPolicy:
+	"""Always allow message delivery."""
 
-		name = "AlwaysAllow"
+	name = "AlwaysAllow"
 
-		def __call__(self, message: Message, recipient: Optional[Any]) -> bool:
-			return True
+	def __call__(self, message: Message, recipient: Optional[Any]) -> bool:
+		return True
 
-	class PartlyBrokenPolicy:
-		""" part of agents cannot communicate with each other, but some can. """
+class PartlyBrokenPolicy:
+	""" part of agents cannot communicate with each other, but some can. """
 
-		def __init__(self, number_of_agents, broken_fraction):
-			self.broken_fraction = broken_fraction
-			self.broken_agents = set(range(int(number_of_agents * broken_fraction)))
-			self.name = f"{broken_fraction*100}%_Broken"
+	def __init__(self, number_of_agents, broken_fraction):
+		self.broken_fraction = broken_fraction
+		self.broken_agents = set(range(int(number_of_agents * broken_fraction)))
+		self.name = f"{broken_fraction*100}%_Broken"
 
-		def __call__(self, message: Message, recipient: Optional[Any]) -> bool:
-			if message.sender in self.broken_agents and recipient in self.broken_agents:
-				return False
-			return True
+	def __call__(self, message: Message, recipient: Optional[Any]) -> bool:
+		if message.sender in self.broken_agents and recipient in self.broken_agents:
+			return False
+		return True
 
