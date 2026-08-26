@@ -38,10 +38,16 @@ class LimitedRangePolicy:
 
 	max_distance: float
 	
-	allow_when_unknown: bool = True
-	distance_fn: Callable[[Position, Position], float] = euclidean_distance
-
 	
+	allow_when_unknown: bool = True
+	
+
+	def __init__(self, max_distance: float, allow_when_unknown: bool = True, distance_fn: Callable[[Position, Position], float] = euclidean_distance):
+		self.max_distance = max_distance
+		self.allow_when_unknown = allow_when_unknown
+		self.distance_fn = distance_fn
+
+		self.name = f"LimitedRange_{max_distance}"
 
 	def __call__(self, message: Message, recipient: Optional[Any], world) -> bool:
 		sender = message.sender

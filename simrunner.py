@@ -32,15 +32,8 @@ def _resolve_planner(planner_algorithm):
         return planners[planner_algorithm]
     return planner_algorithm
 
-
-
-
-
-
-def init(world_map, number_of_agents, number_of_tasks, planner_algorithm, pathfinding_algorithm, steps, message_policy):
-    planner_cls = _resolve_planner(planner_algorithm)
-    
-   
+def init(world_map, number_of_agents, number_of_tasks, planner_algorithm, steps, message_policy):
+    planner_cls = _resolve_planner(planner_algorithm) 
 
     world = World(world_map)
 
