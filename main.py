@@ -19,7 +19,7 @@ import os
 
 from datalogger import DataLogger
 
-from communication.policies import LimitedRangePolicy
+from communication.policies import LimitedRangePolicy, AlwaysAllowPolicy, PartlyBrokenPolicy
 message_policy = [LimitedRangePolicy(max_distance=2)]
 
 def _resolve_world_map_path(map_name: str) -> str:
