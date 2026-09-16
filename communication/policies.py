@@ -67,7 +67,7 @@ class AlwaysAllowPolicy:
 
 	name = "AlwaysAllow"
 
-	def __call__(self, message: Message, recipient: Optional[Any]) -> bool:
+	def __call__(self, message: Message, recipient: Optional[Any], _) -> bool:
 		return True
 
 class PartlyBrokenPolicy:
@@ -78,7 +78,7 @@ class PartlyBrokenPolicy:
 		self.broken_agents = set(range(int(number_of_agents * broken_fraction)))
 		self.name = f"{broken_fraction*100}%_Broken"
 
-	def __call__(self, message: Message, recipient: Optional[Any]) -> bool:
+	def __call__(self, message: Message, recipient: Optional[Any], _) -> bool:
 		if message.sender in self.broken_agents and recipient in self.broken_agents:
 			return False
 		return True

@@ -1,16 +1,16 @@
 
 number_of_agents = [20]
 planner_algorithm = ["Auction"]
-world_map = ["Map15.png"]
+world_map = ["Map14.png"]
 
-Simulation_seeds = [2]
+Simulation_seeds = [1]
 simulation_timesteps = [750]
 number_of_tasks = simulation_timesteps  # Set number_of_tasks equal to simulation_timesteps
 
 visualization = True
 
-record = False
-data_folder_dir = "D:/AfstudeerDataDump/small_batch_runs/"
+record = True
+data_folder_dir = "Data/"
 
 
 import simrunner
@@ -20,14 +20,16 @@ import os
 from datalogger import DataLogger
 
 from communication.policies import LimitedRangePolicy, AlwaysAllowPolicy, PartlyBrokenPolicy
-message_policy = [PartlyBrokenPolicy(number_of_agents[0], 0.5)]  # Example: 50% of agents are broken
+message_policy = [AlwaysAllowPolicy()]  # Example: 50% of agents are broken
 
 def _resolve_world_map_path(map_name: str) -> str:
     return os.path.join(os.path.dirname(__file__), "maps", map_name)
 
 def main():
-    number_of_simulations = len(number_of_agents) * len(planner_algorithm) * len(world_map) * len(number_of_tasks) * len(Simulation_seeds) * len(simulation_timesteps) * len(message_policy)
-
+    if message_policy:
+        number_of_simulations = len(number_of_agents) * len(planner_algorithm) * len(world_map) * len(number_of_tasks) * len(Simulation_seeds) * len(simulation_timesteps) * len(message_policy)
+    else: 
+        number_of_simulations = len(number_of_agents) * len(planner_algorithm) * len(world_map) * len(number_of_tasks) * len(Simulation_seeds) * len(simulation_timesteps)
     for ii in range(number_of_simulations):
         # Calculate the indices for each parameter based on the current simulation index
         idx_agents = ii % len(number_of_agents)
@@ -37,7 +39,8 @@ def main():
         idx_tasks = (ii // (len(number_of_agents) * len(planner_algorithm) * len(world_map))) % len(number_of_tasks)
         idx_seed = (ii // (len(number_of_agents) * len(planner_algorithm) * len(world_map) * len(number_of_tasks))) % len(Simulation_seeds)
         idx_timesteps = (ii // (len(number_of_agents) * len(planner_algorithm) * len(world_map) * len(number_of_tasks) * len(Simulation_seeds))) % len(simulation_timesteps)
-        idx_policies =  (ii // (len(number_of_agents) * len(planner_algorithm) * len(world_map) * len(number_of_tasks) * len(Simulation_seeds) * len(simulation_timesteps))) % len(message_policy)
+        if message_policy:
+            idx_policies =  (ii // (len(number_of_agents) * len(planner_algorithm) * len(world_map) * len(number_of_tasks) * len(Simulation_seeds) * len(simulation_timesteps))) % len(message_policy)
 
         # Get the current parameters for this simulation
         current_number_of_agents = number_of_agents[idx_agents]
@@ -46,10 +49,14 @@ def main():
         current_number_of_tasks = number_of_tasks[idx_tasks]
         current_simulation_seed = Simulation_seeds[idx_seed]
         current_simulation_timesteps = simulation_timesteps[idx_timesteps]
-        current_message_policy = message_policy[idx_policies]
+        if message_policy:
+            current_message_policy = message_policy[idx_policies]
+        else: 
+            current_message_policy = None
 
         random.seed(current_simulation_seed)  # Set the random seed for reproducibility
 
+        
         # Initialize the simulation with the current parameters
         sim_world = simrunner.init(
             current_world_map,
@@ -77,6 +84,7 @@ def main():
 
 
 if __name__ == "__main__":
+    
     main()
 
 

@@ -173,7 +173,7 @@ class World:
     def get_state(self):
        
         entry = {}
-        entry["agents"] = {sim_agent.id: sim_agent.location for sim_agent in self.agents}
+        entry["agents"] = {sim_agent.id: {"pos": sim_agent.location, "tasks": [task[0].id for task in sim_agent.planner.current_queue]} for sim_agent in self.agents}
         
         entry["tasks"] = {sim_task.id: (sim_task.location, {"C": sim_task.completed, "S": sim_task.spawned}) for sim_task in self.tasks}
         
