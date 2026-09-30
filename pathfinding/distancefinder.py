@@ -8,7 +8,7 @@ class DistanceFinder:
         print("caching distances")
         
         self._cache_distances()   
-        print("ready")
+        print("Pathing Initialized")
 
     def get_distance(self, start, goal):
         start_node_id = self.location_dict[start]

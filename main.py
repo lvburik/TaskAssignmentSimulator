@@ -1,11 +1,11 @@
 
 number_of_agents = [20]
-planner_algorithm = ["Auction"]
+planner_algorithm = ["Learned"]
 world_map = ["Map14.png"]
 
-Simulation_seeds = [1]
-simulation_timesteps = [750]
-number_of_tasks = simulation_timesteps  # Set number_of_tasks equal to simulation_timesteps
+Simulation_seeds = [89]
+simulation_timesteps = [500]
+number_of_tasks = [500]  # Set number_of_tasks equal to simulation_timesteps
 
 visualization = True
 

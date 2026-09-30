@@ -8,6 +8,7 @@ from planners.random_moves import RandomMovesPlanner
 from planners.greedy import GreedyTaskSelector
 from planners.tom import TheoryOfMindPlanner
 from planners.auction import AuctionPlanner
+from planners.learned import LearnedPlanner
 
 from pathfinding.distancefinder import DistanceFinder
 
@@ -26,6 +27,7 @@ def _resolve_planner(planner_algorithm):
             "Greedy": GreedyTaskSelector,
             "Tom": TheoryOfMindPlanner,
             "Auction": AuctionPlanner,
+            "Learned": LearnedPlanner,
         }
         if planner_algorithm not in planners:
             raise ValueError(f"Unsupported planner algorithm: {planner_algorithm}")
@@ -35,22 +37,26 @@ def _resolve_planner(planner_algorithm):
 def init(world_map, number_of_agents, number_of_tasks, planner_algorithm, steps, message_policy):
     planner_cls = _resolve_planner(planner_algorithm) 
 
+    print("initializing world")
     world = World(world_map)
 
     message_bus = MessageBus()
     message_bus.add_world(world)
     
     message_bus.add_policy(message_policy)
-
-    distancefinder = DistanceFinder(world.map)
     
+    distancefinder = DistanceFinder(world.map)
+
+    print("initializing agents")
     for ii in range(number_of_agents):
         planner = planner_cls(distancefinder, agent_id = ii, messagebus = message_bus)
         world.add_agent(agent.Agent(id=ii, planner=planner))
 
+    print("initializing tasks")
     for ii in range(number_of_tasks):
         world.add_task(task.Task(id=ii, spawn_time=random.randint(0, steps - 1)))
 
+    print("ready")
     return world
     
 def engine(steps, visualization, logger: DataLogger, world):
