@@ -4,11 +4,13 @@ import random
 import agent
 import task
 
+
 from datalogger import DataLogger
 
 task_spawn_messages = False # Set to True to enable warnings for task spawn issues
 task_completion_messages = False # Set to True to enable warnings for task completion issues
 status_updates = True # Set to True to enable status updates during simulation
+random_close_spawns = True
 
 class World:
     def __init__(self, map_file_name):
@@ -22,6 +24,20 @@ class World:
 
     def add_agent(self, agent):
         #put agent in a random position
+
+        #random chance of spawning next to another agent
+        if random_close_spawns:
+            if random.randint(0, 1) == 1:
+                if self.agents:
+                    neighboragent = random.choice(self.agents)
+                    direction = random.choice([(0, 1),(1, 0),(0, -1),(-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)])
+                    spawn_loc = (neighboragent.location[0] + direction[0], neighboragent.location[1] + direction[1])
+                    if self._is_valid_location(spawn_loc):
+                        agent.location = spawn_loc
+                        self.agents.append(agent)
+                        return
+                    
+        
         agent.location = self._random_empty_cell()
 
         self.agents.append(agent)
