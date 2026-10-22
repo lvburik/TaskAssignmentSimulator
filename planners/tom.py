@@ -8,12 +8,13 @@ class TheoryOfMindPlanner(Planner):
         super().__init__(pathfinding_algorithm, agent_id, messagebus)
 
         self.beliefs = {}  # Placeholder for beliefs about other agents
-        self.current_task_queue = None
+        self.current_queue = []
         self.current_goal = None
         self.previous_task_set = None
         self.world_time = None
         self.world_map = None
         self.agent_location = None  # Placeholder for the agent's current location
+        
 
     def update_plan(self, observation: dict):
 
@@ -26,8 +27,10 @@ class TheoryOfMindPlanner(Planner):
         #if self.previous_task_set != tasks or (current_time != self.world_time and current_time == 0):
         if (current_time != self.world_time and current_time == 0):
             self._initialize_beliefs(uncompleted_tasks)
+            self._normalise_beliefs()
+
         
-        if current_time > self.world_time:
+        elif current_time > self.world_time:
             self._update_beliefs(uncompleted_tasks, observation)
             self._normalise_beliefs()
 
@@ -38,13 +41,16 @@ class TheoryOfMindPlanner(Planner):
 
         if best_task is not None:
             self.current_goal = best_task.location
-            self.current_task_queue = [best_task]
+            self.current_queue = [best_task]
     
     def act(self):
         if self.current_goal is None:
             return None  # Placeholder action when no goal is selected
         
         if self.agent_location == self.current_goal:
+            #clear beliefs.
+            self.beliefs.clear()
+            
             return "perform_task"  # Placeholder action when at the goal
         
         else: 
@@ -58,10 +64,10 @@ class TheoryOfMindPlanner(Planner):
             return  # No tasks to initialize beliefs for
         
         prior = 1.0/len(uncompleted_tasks)
-        self.beliefs.clear()  # Clear existing beliefs
-
+        
         for task in uncompleted_tasks:
-            self.beliefs[task.id] = prior  # Initialize with uniform prior
+            if task.id not in self.beliefs.keys():
+                self.beliefs[task.id] = prior  # Initialize with uniform prior
         
 
     def _update_beliefs(self, uncompleted_tasks:list, observations: dict):
@@ -89,31 +95,22 @@ class TheoryOfMindPlanner(Planner):
         likelihoods = {}
         if not uncompleted_tasks:
             return likelihoods  # No tasks to compute likelihoods for
-        
-        my_location = observations["agent_location"]
-
-        my_distances = self.pathfinding_algorithm.get_distances(my_location, [task.location for task in uncompleted_tasks])
 
         other_agent_locations = observations["other_agent_locations"]
-        other_agent_distances = {}
-        
-        for agent_id, agent_location in other_agent_locations:
-            distances = self.pathfinding_algorithm.get_distances(agent_location, [task.location for task in uncompleted_tasks])
-            other_agent_distances[agent_id] = distances
 
-        first_task_in_queue = self.current_task_queue[0] if self.current_task_queue else None
+        first_task_in_queue = self.current_queue[0] if self.current_queue else None
 
         for task in uncompleted_tasks:
-            distance_to_task = my_distances.get(task.location, float('inf'))
+            distance_to_task = self.pathfinding_algorithm.get_distance(self.agent_location, task.location)
             distance_factor = 1 / (distance_to_task + 1)  # Avoid division by zero
 
             competing_support = 0.0
-            for agent_id, distances in other_agent_distances.items():
-                other_distance_to_task = distances.get(task.location, float('inf'))
+            for _, competeting_location in other_agent_locations:
+                other_distance_to_task = self.pathfinding_algorithm.get_distance(competeting_location, task.location)
                 if other_distance_to_task < distance_to_task:
-                    competing_support += 1.0  # Increment support if another agent is closer
+                    competing_support += 1 / (other_distance_to_task + 1) # Increment support if another agent is closer
 
-            queue_support = 1.0 if first_task_in_queue and first_task_in_queue.id == task.id else 0.0
+            queue_support = 1 if first_task_in_queue and first_task_in_queue.id == task.id else 0.0
 
             likelihood = max(0.01, (distance_factor + queue_support) / (competing_support + 1))
             likelihoods[task.id] = likelihood  

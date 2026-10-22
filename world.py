@@ -46,7 +46,7 @@ class World:
 
         actions = []
         for sim_agent in self.agents:
-            actions.append(sim_agent, sim_agent.act(self))
+            actions.append((sim_agent, sim_agent.act(self)))
 
         for (agent, action) in actions:
             self._apply_action(agent, action)
@@ -172,7 +172,7 @@ class World:
     def get_state(self):
        
         entry = {}
-        entry["agents"] = {sim_agent.id: {"pos": sim_agent.location, "tasks": [task[0].id for task in sim_agent.planner.current_queue]} for sim_agent in self.agents}
+        entry["agents"] = {sim_agent.id: {"pos": sim_agent.location, "tasks": [task.id for task in sim_agent.planner.current_queue]} for sim_agent in self.agents}
         
         entry["tasks"] = {sim_task.id: (sim_task.location) for sim_task in self.tasks if (sim_task.spawned and not sim_task.completed)}
         

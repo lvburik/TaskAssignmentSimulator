@@ -1,7 +1,7 @@
 
 number_of_agents = [20]
-planner_algorithm = ["Auction"]
-world_map = ["Map0.png"]
+planner_algorithm = ["Tom"]
+world_map = ["Map14.png"]
 
 Simulation_seeds = [80, 89]
 simulation_timesteps = [500]
@@ -10,7 +10,7 @@ number_of_tasks = [500]  # Set number_of_tasks equal to simulation_timesteps
 visualization = True
 
 record = True
-data_folder_dir = "/media/luc/4E683EDF683EC60D/GREEDY"
+data_folder_dir = "Data/"
 
 
 import simrunner
