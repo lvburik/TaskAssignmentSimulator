@@ -7,6 +7,7 @@ class GreedyTaskSelector(Planner):
         super().__init__(pathfinding_algorithm, agent_id, messagebus)
 
         self.current_goal = None 
+        self.current_queue = []
         
 
     def update_plan(self, observation: dict):

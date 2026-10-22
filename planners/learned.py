@@ -11,7 +11,7 @@ class LearnedPlanner:
     def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
         self.pathfinding_algorithm = pathfinding_algorithm
 
-        MODEL_DIR = Path("C:/Users/luc/OneDrive/Bureaublad/afstuderen/TaskAssignmentLearner/models/XGB100estimators.json")
+        MODEL_DIR = Path("/home/luc/Desktop/AfstudeerProject/TaskAssignmentLearner/models/MLP.pkl")
         self.model = pickle.load(open(MODEL_DIR, 'rb'))
 
         self.current_queue = []

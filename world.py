@@ -29,9 +29,6 @@ class World:
 
 
     def add_task(self, task):
-        #put the task in a random position
-        task.location = self._random_empty_cell()
-
         self.tasks.append(task)
 
     def _random_empty_cell(self):
@@ -47,9 +44,12 @@ class World:
     def step(self, logger: DataLogger | None = None):
         self._update_tasks(self.time)
 
+        actions = []
         for sim_agent in self.agents:
-            action = sim_agent.act(self)
-            self._apply_action(sim_agent, action)
+            actions.append(sim_agent, sim_agent.act(self))
+
+        for (agent, action) in actions:
+            self._apply_action(agent, action)
 
         if isinstance(logger, DataLogger):
             logger.log(self.get_state())
@@ -140,9 +140,8 @@ class World:
     def _update_tasks(self, current_time: int):
         for task in self.tasks:
             if not task.spawned and task.spawn_time <= current_time:
-                task.spawned = True
-
                 self._spawn_task(task)
+                task.spawned = True
                 if task_spawn_messages: print(f"Task {task.id} spawned at time {current_time}.")
         
     def _spawn_task(self, sim_task: task.Task):

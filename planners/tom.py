@@ -26,7 +26,8 @@ class TheoryOfMindPlanner(Planner):
         #if self.previous_task_set != tasks or (current_time != self.world_time and current_time == 0):
         if (current_time != self.world_time and current_time == 0):
             self._initialize_beliefs(uncompleted_tasks)
-        elif current_time > self.world_time:
+        
+        if current_time > self.world_time:
             self._update_beliefs(uncompleted_tasks, observation)
             self._normalise_beliefs()
 
