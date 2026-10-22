@@ -54,7 +54,7 @@ def init(world_map, number_of_agents, number_of_tasks, planner_algorithm, steps,
 
     print("initializing tasks")
     for ii in range(number_of_tasks):
-        world.add_task(task.Task(id=ii, spawn_time=random.randint(0, steps - 1)))
+        world.add_task(task.Task(id=ii, spawn_time=random.randint(-number_of_agents-10, steps - 1)))
 
     print("ready")
     return world
