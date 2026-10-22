@@ -18,8 +18,8 @@ class AuctionPlanner(Planner):
         self.message_bus.subscribe(self._on_task, topic = "auction", subscriber_id = agent_id)
 
         self.task_bids = {}
-
         self.current_queue = []
+        self.current_task_queue = []
         self.current_goal = None
         
     def update_plan(self, observation: dict):
@@ -47,8 +47,10 @@ class AuctionPlanner(Planner):
 
         self._send_bid_database()
 
-        if self.current_queue:
-            self.current_goal = self.current_queue[0][0].location
+        if self.current_task_queue:
+            self.current_goal = self.current_task_queue[0][0].location
+
+            self.current_queue = [entry[0] for entry in self.current_task_queue]
 
         
 
@@ -66,20 +68,20 @@ class AuctionPlanner(Planner):
         return ToDirection(self.agent_location, next_location)  # Convert the next step in the path to a direction
         
     def _update_distance_to_first_task_in_queue(self):
-        if self.current_queue:
-            first_task, _ = self.current_queue[0]
+        if self.current_task_queue:
+            first_task, _ = self.current_task_queue[0]
             distance_to_first_task = self.pathfinding_algorithm.get_distance(self.agent_location, first_task.location)
 
-            self.current_queue[0] = (first_task, distance_to_first_task + 1)  # add 1 to distance to account for the time it takes to perform the task
+            self.current_task_queue[0] = (first_task, distance_to_first_task + 1)  # add 1 to distance to account for the time it takes to perform the task
 
     def _create_greedy_queue(self, uncompleted_tasks):
-        new_task_locations = {task.location: task for task in uncompleted_tasks if task.id not in [t.id for t, _ in self.current_queue]}
-        while len(self.current_queue) < 5 or len(self.current_queue) < len(new_task_locations):
+        new_task_locations = {task.location: task for task in uncompleted_tasks if task.id not in [t.id for t, _ in self.current_task_queue]}
+        while len(self.current_task_queue) < 5 or len(self.current_task_queue) < len(new_task_locations):
             if not new_task_locations:
                 break  # No more tasks to add
 
             #find closest task to the last task in the queue or to the agent's location if the queue is empty
-            last_location = self.current_queue[-1][0].location if self.current_queue else self.agent_location
+            last_location = self.current_task_queue[-1][0].location if self.current_task_queue else self.agent_location
 
             closest_goal, distance_to_closest_goal = self.pathfinding_algorithm.findclosestgoal(last_location, list(new_task_locations.keys()))
 
@@ -93,24 +95,24 @@ class AuctionPlanner(Planner):
                 del new_task_locations[closest_goal]
                 continue  # Skip adding this task to the queue
 
-            self.current_queue.append((closest_task, distance_to_closest_goal + 1)) # add 1 to distance to account for the time it takes to perform the task
+            self.current_task_queue.append((closest_task, distance_to_closest_goal + 1)) # add 1 to distance to account for the time it takes to perform the task
 
             #remove this task from the new_task_locations to avoid adding it again
             del new_task_locations[closest_goal]
 
     def _remove_lost_tasks_from_queue(self):
         # remove tasks that agent got outbid on from the queue
-        for ii, (task, distance) in enumerate(self.current_queue):
+        for ii, (task, distance) in enumerate(self.current_task_queue):
             if self.task_bids.get(task.id) and self.task_bids[task.id][0] != self.agent_id:
                 #remove all tasks from the queue after this one, as they are no longer valid
-                self.current_queue = self.current_queue[:ii]
+                self.current_task_queue = self.current_task_queue[:ii]
                 break  # Exit the loop after modifying the list
 
     def _insert_tasks_into_queue(self, uncompleted_tasks):
-        new_task_locations = {task.location: task for task in uncompleted_tasks if task.id not in [t.id for t, _ in self.current_queue]}
+        new_task_locations = {task.location: task for task in uncompleted_tasks if task.id not in [t.id for t, _ in self.current_task_queue]}
         start_location = self.agent_location
         task = None
-        for ii, queue_entry in enumerate(self.current_queue):
+        for ii, queue_entry in enumerate(self.current_task_queue):
             distance = queue_entry[1]
 
             canidate_goal_location, distance = self.pathfinding_algorithm.findclosestgoal(start_location, list(new_task_locations.keys()), max_distance = distance - 1)
@@ -126,7 +128,7 @@ class AuctionPlanner(Planner):
 
                 #insert task into the queue at the current position and remove all entries after it, as they are no longer valid
 
-                self.current_queue = self.current_queue[:ii] + [(canidate_task, distance + 1)]  # add 1 to distance to account for the time it takes to perform the task
+                self.current_task_queue = self.current_task_queue[:ii] + [(canidate_task, distance + 1)]  # add 1 to distance to account for the time it takes to perform the task
 
                 
             task = queue_entry[0]
@@ -146,11 +148,11 @@ class AuctionPlanner(Planner):
     def _clean_up_queue(self, uncompleted_tasks):
         # Remove tasks from the queue that are no longer in the uncompleted_tasks list
         uncompleted_task_ids = {task.id for task in uncompleted_tasks}
-        self.current_queue = [(task, distance) for task, distance in self.current_queue if task.id in uncompleted_task_ids]
+        self.current_task_queue = [(task, distance) for task, distance in self.current_task_queue if task.id in uncompleted_task_ids]
 
         # Update current_goal to the first task in the queue if it exists
-        if self.current_queue:
-            self.current_goal = self.current_queue[0][0].location
+        if self.current_task_queue:
+            self.current_goal = self.current_task_queue[0][0].location
         else:
             self.current_goal = None
 
@@ -159,7 +161,7 @@ class AuctionPlanner(Planner):
         prior_task = None
 
         #update bids
-        for task, distance in self.current_queue:
+        for task, distance in self.current_task_queue:
             bid = (task.id, self.agent_id, self._compute_bid(prior_task, distance), self.world_time)
             
             if self._is_this_bid_better(bid):
@@ -171,7 +173,7 @@ class AuctionPlanner(Planner):
         for (task_id, winner_id, _, _) in self.task_bids.values():
             if winner_id == self.agent_id:
                 task_in_queue = False
-                for task, _ in self.current_queue:
+                for task, _ in self.current_task_queue:
                     if task.id == task_id:
                         task_in_queue = True
                         break
@@ -224,7 +226,7 @@ class AuctionPlanner(Planner):
         bid = 0.001 * self.agent_id
 
         if prior_task:
-            for task, dist in self.current_queue:
+            for task, dist in self.current_task_queue:
                 bid += dist
                 if task.id == prior_task.id:
                     break
