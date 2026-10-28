@@ -1,9 +1,10 @@
 
 number_of_agents = [40]
 planner_algorithm = ["CNN"]
-world_map = ["Map9.png"]
+world_map = ["Map0.png"]
 
-Simulation_seeds = [1724, 5001, 10, 172, 17, 8, 2, 4]
+Simulation_seeds = [1324, 132, 1372, 137234587]
+#Simulation_seeds = [1724, 5001, 10, 172, 17, 8, 2, 4]
 simulation_timesteps = [500]
 number_of_tasks = [1100]  # Set number_of_tasks equal to simulation_timesteps
 

@@ -1,5 +1,6 @@
 from pathlib import Path, PosixPath
 import pathlib
+import os
 
 import torch
 from torch import Tensor, nn
@@ -173,13 +174,18 @@ class _LegacyAssignmentCNN(nn.Module):
         ).squeeze(1)
 
 
-def _load_model(path: Path) -> tuple[AssignmentCNN, float]:
+def _load_model(path: Path, device: torch.device) -> tuple[nn.Module, float]:
     # Checkpoints trained on Windows may contain pathlib.WindowsPath metadata.
+    original_posix_path = pathlib.PosixPath
     original_windows_path = pathlib.WindowsPath
-    pathlib.WindowsPath = PosixPath
+    if os.name == "nt":
+        pathlib.PosixPath = pathlib.WindowsPath
+    else:
+        pathlib.WindowsPath = PosixPath
     try:
-        checkpoint = torch.load(path, map_location="cpu", weights_only=False)
+        checkpoint = torch.load(path, map_location=device, weights_only=False)
     finally:
+        pathlib.PosixPath = original_posix_path
         pathlib.WindowsPath = original_windows_path
 
     if not isinstance(checkpoint, dict) or "model_state_dict" not in checkpoint:
@@ -206,16 +212,23 @@ def _load_model(path: Path) -> tuple[AssignmentCNN, float]:
             dropout=float(config.get("dropout", 0.3)),
         )
     model.load_state_dict(checkpoint["model_state_dict"])
+    model.to(device)
     model.eval()
     return model, float(checkpoint.get("threshold", 0.5))
 
 
 class CNNPlanner:
+    _model_cache: dict[tuple[Path, torch.device], tuple[nn.Module, float]] = {}
+
     def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
         self.pathfinding_algorithm = pathfinding_algorithm
 
-        MODEL_DIR = Path("/home/luc/Desktop/AfstudeerProject/TaskAssignmentLearner/models/CNN_best_1.pt")
-        self.model, self.threshold = _load_model(MODEL_DIR)
+        MODEL_DIR = Path("D:\\afstuderen\\TaskAssignmentLearner\\models\\CNN_best_1.pt")
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        cache_key = (MODEL_DIR, self.device)
+        if cache_key not in self._model_cache:
+            self._model_cache[cache_key] = _load_model(MODEL_DIR, self.device)
+        self.model, self.threshold = self._model_cache[cache_key]
 
         self.current_queue = []
         self.current_task_queue = []
@@ -230,7 +243,7 @@ class CNNPlanner:
             return
 
         images = torch.from_numpy(cnn_inputs(observation, tasks))
-        images = images.permute(0, 3, 1, 2).float().div_(255.0)
+        images = images.permute(0, 3, 1, 2).float().div_(255.0).to(self.device)
         with torch.inference_mode():
             probabilities = torch.sigmoid(self.model(images))
         predictions = probabilities.ge(self.threshold).tolist()

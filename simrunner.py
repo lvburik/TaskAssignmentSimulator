@@ -2,8 +2,6 @@ import agent
 import task
 import random
 
-from visualization.pygame_viewer import PygameViewer
-
 from planners.random_moves import RandomMovesPlanner
 from planners.greedy import GreedyTaskSelector
 from planners.tom import TheoryOfMindPlanner
@@ -66,6 +64,8 @@ def init(world_map, number_of_agents, number_of_tasks, planner_algorithm, steps,
 def engine(steps, visualization, logger: DataLogger, world):
     
     if visualization:
+        from visualization.pygame_viewer import PygameViewer
+
         viewer = PygameViewer(world)
         viewer.run(step_callback=lambda _step: world.step(logger), max_steps=steps, fps=max_fps)
         return
@@ -74,4 +74,3 @@ def engine(steps, visualization, logger: DataLogger, world):
         world.step(logger)
         
         
-

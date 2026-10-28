@@ -9,7 +9,7 @@ class MLPPlanner:
     def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
         self.pathfinding_algorithm = pathfinding_algorithm
 
-        MODEL_DIR = Path("/home/luc/Desktop/AfstudeerProject/TaskAssignmentLearner/models/MLP_best_1.pkl")
+        MODEL_DIR = Path("D:\\afstuderen\\TaskAssignmentLearner\\models\\MLP_best_1.pkl")
         self.model = pickle.load(open(MODEL_DIR, 'rb'))
 
         self.current_queue = []
