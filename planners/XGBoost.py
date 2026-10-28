@@ -3,13 +3,14 @@ from pathlib import Path
 import pickle
 
 from planners.model_input import available_tasks, tabular_inputs
+from app_config import PATHS
 
 
 class XGBPlanner:
     def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
         self.pathfinding_algorithm = pathfinding_algorithm
 
-        MODEL_DIR = Path("D:\\afstuderen\\TaskAssignmentLearner\\models\\XGBoost_best_1.pkl")
+        MODEL_DIR = Path(PATHS["xgb_model"])
         self.model = pickle.load(open(MODEL_DIR, 'rb'))
 
         self.current_queue = []

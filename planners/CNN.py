@@ -8,6 +8,7 @@ from torch import Tensor, nn
 from pathfinding.to_direction import ToDirection
 
 from planners.model_input import available_tasks, cnn_inputs
+from app_config import PATHS
 
 
 class AssignmentCNN(nn.Module):
@@ -223,7 +224,7 @@ class CNNPlanner:
     def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
         self.pathfinding_algorithm = pathfinding_algorithm
 
-        MODEL_DIR = Path("D:\\afstuderen\\TaskAssignmentLearner\\models\\CNN_best_1.pt")
+        MODEL_DIR = Path(PATHS["cnn_model"])
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         cache_key = (MODEL_DIR, self.device)
         if cache_key not in self._model_cache:

@@ -17,8 +17,9 @@ from communication.bus import MessageBus
 
 from world import World
 from datalogger import DataLogger
+from app_config import SIMULATION_SETTINGS
 
-max_fps = 120
+max_fps = SIMULATION_SETTINGS["simrunner_max_fps"]
 
 def _resolve_planner(planner_algorithm):
     if isinstance(planner_algorithm, str):
