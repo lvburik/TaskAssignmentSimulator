@@ -1,13 +1,13 @@
 
-number_of_agents = [20]
-planner_algorithm = ["Tom"]
-world_map = ["Map14.png"]
+number_of_agents = [40]
+planner_algorithm = ["CNN"]
+world_map = ["Map9.png"]
 
-Simulation_seeds = [80, 89]
+Simulation_seeds = [1724, 5001, 10, 172, 17, 8, 2, 4]
 simulation_timesteps = [500]
-number_of_tasks = [500]  # Set number_of_tasks equal to simulation_timesteps
+number_of_tasks = [1100]  # Set number_of_tasks equal to simulation_timesteps
 
-visualization = True
+visualization = False
 
 record = True
 data_folder_dir = "Data/"
@@ -20,7 +20,8 @@ import os
 from datalogger import DataLogger
 
 from communication.policies import LimitedRangePolicy, AlwaysAllowPolicy, PartlyBrokenPolicy
-message_policy = [AlwaysAllowPolicy()]  # Example: 50% of agents are broken
+#message_policy = [PartlyBrokenPolicy(number_of_agents = 30, broken_fraction=10), PartlyBrokenPolicy(number_of_agents = 30, broken_fraction=20), PartlyBrokenPolicy(number_of_agents = 30, broken_fraction=30), PartlyBrokenPolicy(number_of_agents = 30, broken_fraction=40), PartlyBrokenPolicy(number_of_agents = 30, broken_fraction=50)]  # Example: 50% of agents are broken
+message_policy = [AlwaysAllowPolicy()]
 
 def _resolve_world_map_path(map_name: str) -> str:
     return os.path.join(os.path.dirname(__file__), "maps", map_name)

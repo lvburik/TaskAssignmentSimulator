@@ -8,7 +8,9 @@ from planners.random_moves import RandomMovesPlanner
 from planners.greedy import GreedyTaskSelector
 from planners.tom import TheoryOfMindPlanner
 from planners.auction import AuctionPlanner
-from planners.learned import LearnedPlanner
+from planners.XGBoost import XGBPlanner
+from planners.MLP import MLPPlanner
+from planners.CNN import CNNPlanner
 
 from pathfinding.distancefinder import DistanceFinder
 
@@ -27,7 +29,9 @@ def _resolve_planner(planner_algorithm):
             "Greedy": GreedyTaskSelector,
             "Tom": TheoryOfMindPlanner,
             "Auction": AuctionPlanner,
-            "Learned": LearnedPlanner,
+            "XGB": XGBPlanner,
+            "MLP": MLPPlanner,
+            "CNN": CNNPlanner,
         }
         if planner_algorithm not in planners:
             raise ValueError(f"Unsupported planner algorithm: {planner_algorithm}")
