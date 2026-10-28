@@ -23,4 +23,12 @@ SIMULATION_SETTINGS = {
     "visualization": False,
     "record": True,
     "message_policy": [AlwaysAllowPolicy()],
+    "simrunner_max_fps": 120,
+    "world_task_spawn_messages": False,
+    "world_task_completion_messages": False,
+    "world_status_updates": True,
+    "world_random_close_spawns": True,
+    "viewer_basic_sim_info": True,
+    "viewer_debug_mode": True,
+    "viewer_debug_mode_settings": [],
 }

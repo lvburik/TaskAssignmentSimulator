@@ -6,11 +6,12 @@ import task
 
 
 from datalogger import DataLogger
+from app_config import SIMULATION_SETTINGS
 
-task_spawn_messages = False # Set to True to enable warnings for task spawn issues
-task_completion_messages = False # Set to True to enable warnings for task completion issues
-status_updates = True # Set to True to enable status updates during simulation
-random_close_spawns = True
+task_spawn_messages = SIMULATION_SETTINGS["world_task_spawn_messages"] # Set to True to enable warnings for task spawn issues
+task_completion_messages = SIMULATION_SETTINGS["world_task_completion_messages"] # Set to True to enable warnings for task completion issues
+status_updates = SIMULATION_SETTINGS["world_status_updates"] # Set to True to enable status updates during simulation
+random_close_spawns = SIMULATION_SETTINGS["world_random_close_spawns"]
 
 class World:
     def __init__(self, map_file_name):

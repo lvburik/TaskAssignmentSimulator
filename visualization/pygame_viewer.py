@@ -1,5 +1,7 @@
 import pygame
 
+from app_config import SIMULATION_SETTINGS
+
 CELL_SIZE= 16
 GRID_COLOR = (45, 45, 45)
 BACKGROUND_COLOR = (18, 18, 18)
@@ -12,9 +14,9 @@ TASK_COLOR = (155, 50, 0)
 TEXT_INFO_COLOR = (150, 150, 0)
 DEBUG_TEXT_COLOR = (255, 255, 255)
 
-basic_sim_info = True
-debug_mode = True
-debug_mode_settings = [] #1 = show agent ids, 2 = show agent goal locations, 3 = show task ids, 4 = show agent task queues
+basic_sim_info = SIMULATION_SETTINGS["viewer_basic_sim_info"]
+debug_mode = SIMULATION_SETTINGS["viewer_debug_mode"]
+debug_mode_settings = SIMULATION_SETTINGS["viewer_debug_mode_settings"] #1 = show agent ids, 2 = show agent goal locations, 3 = show task ids, 4 = show agent task queues
 
 class PygameViewer:
     def __init__(self, world):
