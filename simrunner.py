@@ -8,7 +8,9 @@ from planners.random_moves import RandomMovesPlanner
 from planners.greedy import GreedyTaskSelector
 from planners.tom import TheoryOfMindPlanner
 from planners.auction import AuctionPlanner
-from planners.learned import LearnedPlanner
+from planners.XGBoost import XGBPlanner
+from planners.MLP import MLPPlanner
+from planners.CNN import CNNPlanner
 
 from pathfinding.distancefinder import DistanceFinder
 
@@ -27,7 +29,9 @@ def _resolve_planner(planner_algorithm):
             "Greedy": GreedyTaskSelector,
             "Tom": TheoryOfMindPlanner,
             "Auction": AuctionPlanner,
-            "Learned": LearnedPlanner,
+            "XGB": XGBPlanner,
+            "MLP": MLPPlanner,
+            "CNN": CNNPlanner,
         }
         if planner_algorithm not in planners:
             raise ValueError(f"Unsupported planner algorithm: {planner_algorithm}")
@@ -54,7 +58,7 @@ def init(world_map, number_of_agents, number_of_tasks, planner_algorithm, steps,
 
     print("initializing tasks")
     for ii in range(number_of_tasks):
-        world.add_task(task.Task(id=ii, spawn_time=random.randint(0, steps - 1)))
+        world.add_task(task.Task(id=ii, spawn_time=random.randint(-number_of_agents-10, steps - 1)))
 
     print("ready")
     return world
