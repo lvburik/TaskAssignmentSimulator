@@ -3,13 +3,14 @@ from pathlib import Path
 import pickle
 
 from planners.model_input import available_tasks, tabular_inputs
+from app_config import PATHS
 
 
 class MLPPlanner:
     def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
         self.pathfinding_algorithm = pathfinding_algorithm
 
-        MODEL_DIR = Path("D:\\afstuderen\\TaskAssignmentLearner\\models\\MLP_best_1.pkl")
+        MODEL_DIR = Path(PATHS["mlp_model"])
         self.model = pickle.load(open(MODEL_DIR, 'rb'))
 
         self.current_queue = []

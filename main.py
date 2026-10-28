@@ -1,31 +1,30 @@
 
-number_of_agents = [40]
-planner_algorithm = ["CNN"]
-world_map = ["Map0.png"]
-
-Simulation_seeds = [1324, 132, 1372, 137234587]
-#Simulation_seeds = [1724, 5001, 10, 172, 17, 8, 2, 4]
-simulation_timesteps = [500]
-number_of_tasks = [1100]  # Set number_of_tasks equal to simulation_timesteps
-
-visualization = False
-
-record = True
-data_folder_dir = "Data/"
-
-
 import simrunner
 import random
-import os
+from pathlib import Path
 
 from datalogger import DataLogger
 
-from communication.policies import LimitedRangePolicy, AlwaysAllowPolicy, PartlyBrokenPolicy
-#message_policy = [PartlyBrokenPolicy(number_of_agents = 30, broken_fraction=10), PartlyBrokenPolicy(number_of_agents = 30, broken_fraction=20), PartlyBrokenPolicy(number_of_agents = 30, broken_fraction=30), PartlyBrokenPolicy(number_of_agents = 30, broken_fraction=40), PartlyBrokenPolicy(number_of_agents = 30, broken_fraction=50)]  # Example: 50% of agents are broken
-message_policy = [AlwaysAllowPolicy()]
+from app_config import PATHS, SIMULATION_SETTINGS
+
+
+number_of_agents = SIMULATION_SETTINGS["number_of_agents"]
+planner_algorithm = SIMULATION_SETTINGS["planner_algorithm"]
+world_map = SIMULATION_SETTINGS["world_map"]
+
+Simulation_seeds = SIMULATION_SETTINGS["simulation_seeds"]
+simulation_timesteps = SIMULATION_SETTINGS["simulation_timesteps"]
+number_of_tasks = SIMULATION_SETTINGS["number_of_tasks"]
+
+visualization = SIMULATION_SETTINGS["visualization"]
+
+record = SIMULATION_SETTINGS["record"]
+data_folder_dir = str(PATHS["data_dir"])
+
+message_policy = SIMULATION_SETTINGS["message_policy"]
 
 def _resolve_world_map_path(map_name: str) -> str:
-    return os.path.join(os.path.dirname(__file__), "maps", map_name)
+    return str(Path(PATHS["maps_dir"]) / map_name)
 
 def main():
     if message_policy:
@@ -91,4 +90,3 @@ if __name__ == "__main__":
 
 
     
-
