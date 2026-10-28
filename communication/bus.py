@@ -7,7 +7,7 @@ from communication.policies import MessagePolicy
 
 
 class MessageBus:
-	"""A very small in-process message bus.
+	"""Synchronous in-process message routing with optional delivery policies.
 
 	Subscribers register callbacks for topics or for a specific recipient id.
 	When a `Message` is published, topic subscribers and recipient-specific
@@ -23,6 +23,7 @@ class MessageBus:
 		self._policies: List[MessagePolicy] = []
 
 	def add_world(self, world):
+		"""Provide world context to policies that inspect sender/receiver positions."""
 		self.world = world
 
 	def add_policy(self, policy: MessagePolicy) -> None:
@@ -145,6 +146,6 @@ class MessageBus:
 					cb(message)
 
 	def clear(self) -> None:
-		"""Remove all subscriptions."""
+		"""Remove all topic and recipient subscriptions."""
 		self._topics.clear()
 		self._recipients.clear()

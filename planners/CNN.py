@@ -1,3 +1,5 @@
+"""CNN-based task assignment and support for current and legacy checkpoints."""
+
 from pathlib import Path, PosixPath
 import pathlib
 import os
@@ -12,6 +14,8 @@ from app_config import PATHS
 
 
 class AssignmentCNN(nn.Module):
+    """Three-channel CNN that predicts whether an agent should take a task."""
+
     def __init__(
         self,
         input_channels: int,
@@ -130,6 +134,8 @@ class AssignmentCNN(nn.Module):
 
 
 class _LegacyAssignmentCNN(nn.Module):
+    """CNN architecture retained for checkpoints using the original layout."""
+
     def __init__(self, channels: int, height: int, width: int, config: dict) -> None:
         super().__init__()
         self.features = nn.Sequential(
@@ -176,6 +182,7 @@ class _LegacyAssignmentCNN(nn.Module):
 
 
 def _load_model(path: Path, device: torch.device) -> tuple[nn.Module, float]:
+    """Build and load a supported checkpoint, returning its decision threshold."""
     # Checkpoints trained on Windows may contain pathlib.WindowsPath metadata.
     original_posix_path = pathlib.PosixPath
     original_windows_path = pathlib.WindowsPath
@@ -219,6 +226,8 @@ def _load_model(path: Path, device: torch.device) -> tuple[nn.Module, float]:
 
 
 class CNNPlanner:
+    """Select tasks with a cached CNN checkpoint and shortest-path routing."""
+
     _model_cache: dict[tuple[Path, torch.device], tuple[nn.Module, float]] = {}
 
     def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
@@ -236,6 +245,7 @@ class CNNPlanner:
         self.current_goal = None
 
     def update_plan(self, observation: dict):
+        """Build task images, predict assignments, and order selected tasks."""
         self.agent_location = observation["agent_location"]
         tasks = available_tasks(observation)
         self.current_task_queue = []
@@ -265,7 +275,7 @@ class CNNPlanner:
             self.current_queue = [entry[0] for entry in self.current_task_queue]
 
     def act(self):
-            
+        """Move toward the nearest predicted task or perform it."""
         if self.current_goal is None:
             return None  # Placeholder action when no goal is selected
             

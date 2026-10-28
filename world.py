@@ -1,3 +1,5 @@
+"""Grid-world state and the rules for advancing one simulation time step."""
+
 import os
 import random
 
@@ -14,7 +16,10 @@ status_updates = SIMULATION_SETTINGS["world_status_updates"] # Set to True to en
 random_close_spawns = SIMULATION_SETTINGS["world_random_close_spawns"]
 
 class World:
+    """A rectangular obstacle map containing agents and scheduled tasks."""
+
     def __init__(self, map_file_name):
+        """Load a grayscale map and initialize an empty world at time zero."""
         self.time = 0
         self.agents = []
         self.tasks = []
@@ -24,6 +29,7 @@ class World:
         self.width = len(self.map[0]) if self.height > 0 else 0
 
     def add_agent(self, agent):
+        """Place an agent in a free cell, optionally near an existing agent."""
         #put agent in a random position
 
         #random chance of spawning next to another agent
@@ -46,6 +52,7 @@ class World:
 
 
     def add_task(self, task):
+        """Register a task to be spawned once its scheduled time is reached."""
         self.tasks.append(task)
 
     def _random_empty_cell(self):
@@ -59,6 +66,7 @@ class World:
         
 
     def step(self, logger: DataLogger | None = None):
+        """Spawn due tasks, collect and apply agent actions, and advance time."""
         self._update_tasks(self.time)
 
         actions = []
@@ -76,6 +84,7 @@ class World:
 
 
     def _load_map(self, map_file_name):
+        """Convert a PNG map to a matrix where zero is walkable and one blocked."""
         if not os.path.isabs(map_file_name):
             workspace_root = os.path.dirname(os.path.dirname(__file__))
             map_file_name = os.path.join(workspace_root, "maps", map_file_name)
@@ -187,7 +196,7 @@ class World:
         return free_cells
 
     def get_state(self):
-       
+        """Return the current agent queues and active task locations by time."""
         entry = {}
         entry["agents"] = {sim_agent.id: {"pos": sim_agent.location, "tasks": [task.id for task in sim_agent.planner.current_queue]} for sim_agent in self.agents}
         
@@ -196,6 +205,7 @@ class World:
         return {self.time: entry}
 
     def get_world_map_info(self):
+        """Return the matrix and dimensions used by the data logger."""
         return {
             "map_matrix": self.map,
             "map_width": self.width,
@@ -203,6 +213,7 @@ class World:
         }
         
 def status_update(world, step):
+    """Print periodic progress when world status messages are enabled."""
     if status_updates:
         if step % 10 == 0:
             print(f"Simulation progress: {step} steps completed. Number_of_incomplete_tasks: {len([task for task in world.tasks if not task.completed and task.spawned])}")

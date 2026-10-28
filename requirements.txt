@@ -1,0 +1,7 @@
+numpy
+pandas
+Pillow
+pygame
+torch
+scikit-learn
+xgboost

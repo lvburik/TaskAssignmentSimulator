@@ -1,8 +1,12 @@
+"""Nearest-reachable-task planner with no inter-agent coordination."""
+
 from planners.class_definition import Planner
 
 from pathfinding.to_direction import ToDirection
 
 class GreedyTaskSelector(Planner):
+    """Choose the closest active task and follow a shortest path to it."""
+
     def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
         super().__init__(pathfinding_algorithm, agent_id, messagebus)
 
@@ -11,6 +15,7 @@ class GreedyTaskSelector(Planner):
         
 
     def update_plan(self, observation: dict):
+        """Select the closest reachable task from the current observation."""
         self.tasks = observation["tasks"]
         self.agent_location = observation["agent_location"]
         self.world_map = observation["map"]
@@ -29,6 +34,7 @@ class GreedyTaskSelector(Planner):
         
 
     def act(self):
+        """Move toward the selected task or perform it when at its location."""
         if self.current_goal is None:
             return None  # Placeholder action when no goal is selected
         
@@ -41,4 +47,3 @@ class GreedyTaskSelector(Planner):
         return ToDirection(self.agent_location, next_location)  # Convert the next step in the path to a direction
 
         
-

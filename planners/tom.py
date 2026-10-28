@@ -1,9 +1,13 @@
+"""Task selection using simple beliefs about other agents' task choices."""
+
 from planners.class_definition import Planner
 
 from pathfinding.to_direction import ToDirection
 
 
 class TheoryOfMindPlanner(Planner):
+    """Update task beliefs from proximity and competing-agent observations."""
+
     def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
         super().__init__(pathfinding_algorithm, agent_id, messagebus)
 
@@ -17,6 +21,7 @@ class TheoryOfMindPlanner(Planner):
         
 
     def update_plan(self, observation: dict):
+        """Update beliefs and choose the task with the highest current belief."""
 
         current_time = observation["time"]
         self.agent_location = observation["agent_location"]
@@ -44,6 +49,7 @@ class TheoryOfMindPlanner(Planner):
             self.current_queue = [best_task]
     
     def act(self):
+        """Follow the current goal or perform its task."""
         if self.current_goal is None:
             return None  # Placeholder action when no goal is selected
         
@@ -59,6 +65,7 @@ class TheoryOfMindPlanner(Planner):
         return ToDirection(self.agent_location, next_location)  # Convert the next step in the path to a direction
     
     def _initialize_beliefs(self, uncompleted_tasks: list):
+        """Assign an initially uniform belief across available tasks."""
         if not uncompleted_tasks:
             self.beliefs.clear()  # No tasks to initialize beliefs for
             return  # No tasks to initialize beliefs for
@@ -71,6 +78,7 @@ class TheoryOfMindPlanner(Planner):
         
 
     def _update_beliefs(self, uncompleted_tasks:list, observations: dict):
+        """Reweight task beliefs using estimated agent competition."""
         if not uncompleted_tasks:
             self.beliefs.clear()  # No tasks to update beliefs for
             return  # No tasks to update beliefs for
@@ -84,6 +92,7 @@ class TheoryOfMindPlanner(Planner):
         
     
     def _normalise_beliefs(self):
+        """Scale beliefs so their total is one when the total is nonzero."""
         total_belief = sum(self.beliefs.values())
         if total_belief == 0:
             return  # Avoid division by zero; beliefs remain unchanged
@@ -92,6 +101,7 @@ class TheoryOfMindPlanner(Planner):
             self.beliefs[task_id] /= total_belief  # Normalize beliefs to sum to 1
     
     def _compute_likelihoods(self, uncompleted_tasks: list, observations: dict):
+        """Estimate task likelihood from distance, queue, and teammate positions."""
         likelihoods = {}
         if not uncompleted_tasks:
             return likelihoods  # No tasks to compute likelihoods for
@@ -116,4 +126,3 @@ class TheoryOfMindPlanner(Planner):
             likelihoods[task.id] = likelihood  
 
         return likelihoods
-
