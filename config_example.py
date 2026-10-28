@@ -8,9 +8,9 @@ BASE_DIR = Path(__file__).resolve().parent
 PATHS = {
     "maps_dir": BASE_DIR / "maps",
     "data_dir": BASE_DIR / "Data",
-    "xgb_model": BASE_DIR / "models" / "XGBoost_best_1.pkl",
-    "mlp_model": BASE_DIR / "models" / "MLP_best_1.pkl",
-    "cnn_model": BASE_DIR / "models" / "CNN_best_1.pt",
+    "xgb_model": BASE_DIR / "models" / "XGB.pkl",
+    "mlp_model": BASE_DIR / "models" / "MLP.pkl",
+    "cnn_model": BASE_DIR / "models" / "CNN.pt",
 }
 
 SIMULATION_SETTINGS = {
