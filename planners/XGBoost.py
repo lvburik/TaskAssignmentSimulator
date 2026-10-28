@@ -1,3 +1,5 @@
+"""Planner that selects tasks with a saved XGBoost tabular classifier."""
+
 from pathfinding.to_direction import ToDirection
 from pathlib import Path
 import pickle
@@ -7,6 +9,8 @@ from app_config import PATHS
 
 
 class XGBPlanner:
+    """Load an XGBoost-compatible pickle and route to predicted tasks."""
+
     def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
         self.pathfinding_algorithm = pathfinding_algorithm
 
@@ -18,6 +22,7 @@ class XGBPlanner:
         self.current_goal = None
 
     def update_plan(self, observation: dict):
+        """Score active tasks and queue positive classifier predictions."""
         self.agent_location = observation["agent_location"]
         tasks = available_tasks(observation)
         self.current_task_queue = []
@@ -44,7 +49,7 @@ class XGBPlanner:
             self.current_queue = [entry[0] for entry in self.current_task_queue]
 
     def act(self):
-            
+        """Move toward the nearest selected task or perform it."""
         if self.current_goal is None:
             return None  # Placeholder action when no goal is selected
             

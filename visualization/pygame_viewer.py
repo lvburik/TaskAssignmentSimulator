@@ -1,3 +1,5 @@
+"""Pygame renderer for the current map, agents, tasks, and optional overlays."""
+
 import pygame
 
 from app_config import SIMULATION_SETTINGS
@@ -19,7 +21,10 @@ debug_mode = SIMULATION_SETTINGS["viewer_debug_mode"]
 debug_mode_settings = SIMULATION_SETTINGS["viewer_debug_mode_settings"] #1 = show agent ids, 2 = show agent goal locations, 3 = show task ids, 4 = show agent task queues
 
 class PygameViewer:
+    """Render a world one step at a time until it ends or the window closes."""
+
     def __init__(self, world):
+        """Initialize the display and size it to the world's grid dimensions."""
         self.world = world
         
 
@@ -34,6 +39,7 @@ class PygameViewer:
         self.clock = pygame.time.Clock()
 
     def draw_grid(self):
+        """Draw cell boundaries over the map."""
         for x in range(0, self.world.width):
             pygame.draw.line(
                 self.screen, 
@@ -51,6 +57,7 @@ class PygameViewer:
                 )
 
     def draw_walls(self):
+        """Draw blocked map cells."""
         for y, row in enumerate(self.world.map):
             for x, cell in enumerate(row):
                 if cell == 1:
@@ -61,6 +68,7 @@ class PygameViewer:
                     )
             
     def draw_agents(self):
+        """Draw each agent at its current location."""
         for agent in self.world.agents:
             x, y = agent.location
 
@@ -73,6 +81,7 @@ class PygameViewer:
                 )
             
     def draw_tasks(self):
+        """Draw tasks that have spawned and are not yet completed."""
         for task in self.world.tasks:
             if not task.spawned or task.completed:
                 continue
@@ -88,6 +97,7 @@ class PygameViewer:
                 )
             
     def add_text_info(self):
+        """Show the current step and active task count."""
         time = self.world.time
         number_of_active_incomplete_tasks = len([task for task in self.world.tasks if task.spawned and not task.completed])
 
@@ -97,6 +107,7 @@ class PygameViewer:
         self.screen.blit(text, (self.width - text.get_width() - 10, 10))
 
     def add_debug_info(self):
+        """Draw the overlays selected by ``viewer_debug_mode_settings``."""
         font = pygame.font.SysFont(None, 20)
         if 1 in debug_mode_settings: 
             #show agent ids
@@ -142,6 +153,7 @@ class PygameViewer:
 
             
     def render(self):
+        """Redraw the complete current frame and update the display."""
         self.screen.fill(BACKGROUND_COLOR)
         self.draw_grid()
         self.draw_walls()
@@ -154,6 +166,7 @@ class PygameViewer:
         pygame.display.flip()
     
     def run(self, step_callback, max_steps=100, fps=10):
+        """Run the event loop, invoking ``step_callback`` once per frame."""
         running = True
         step = 0
 

@@ -1,3 +1,5 @@
+"""Construct simulation worlds and run their configured number of steps."""
+
 import agent
 import task
 import random
@@ -22,6 +24,7 @@ from app_config import SIMULATION_SETTINGS
 max_fps = SIMULATION_SETTINGS["simrunner_max_fps"]
 
 def _resolve_planner(planner_algorithm):
+    """Return a planner class for a supported name or pass through a class."""
     if isinstance(planner_algorithm, str):
         planners = {
             "Random": RandomMovesPlanner,
@@ -38,6 +41,7 @@ def _resolve_planner(planner_algorithm):
     return planner_algorithm
 
 def init(world_map, number_of_agents, number_of_tasks, planner_algorithm, steps, message_policy):
+    """Create a world, shared pathfinding cache, agents, and scheduled tasks."""
     planner_cls = _resolve_planner(planner_algorithm) 
 
     print("initializing world")
@@ -46,7 +50,8 @@ def init(world_map, number_of_agents, number_of_tasks, planner_algorithm, steps,
     message_bus = MessageBus()
     message_bus.add_world(world)
     
-    message_bus.add_policy(message_policy)
+    if message_policy is not None:
+        message_bus.add_policy(message_policy)
     
     distancefinder = DistanceFinder(world.map)
 
@@ -63,7 +68,7 @@ def init(world_map, number_of_agents, number_of_tasks, planner_algorithm, steps,
     return world
     
 def engine(steps, visualization, logger: DataLogger, world):
-    
+    """Advance the world for ``steps``, optionally rendering each step."""
     if visualization:
         from visualization.pygame_viewer import PygameViewer
 

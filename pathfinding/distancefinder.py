@@ -1,7 +1,12 @@
+"""Precompute shortest paths between all walkable map cells."""
+
 import numpy as np
 
 class DistanceFinder:
+    """Four-neighbor grid graph with cached all-pairs shortest-path distances."""
+
     def __init__(self, map_matrix):
+        """Build the walkable-cell graph and cache distances from every cell."""
         print("precalculating paths")
         
         self._create_connection_graph(map_matrix)
@@ -11,15 +16,18 @@ class DistanceFinder:
         print("Pathing Initialized")
 
     def get_distance(self, start, goal):
+        """Return the cached number of moves between two walkable coordinates."""
         start_node_id = self.location_dict[start]
         goal_node_id = self.location_dict[goal]
 
         return self.distances[start_node_id][goal_node_id]
 
     def get_distances(self, start, goals):
+        """Return the distance from ``start`` to each goal, preserving order."""
         return [self.get_distance(start, goal) for goal in goals]
 
     def next_step(self, agent_location, goal_location):
+        """Return a neighboring coordinate that decreases distance to the goal."""
 
         agent_node_id = self.location_dict[agent_location]
         goal_node_id = self.location_dict[goal_location]
@@ -34,6 +42,7 @@ class DistanceFinder:
                 
 
     def findclosestgoal(self, start, goals, max_distance=float("inf")):
+        """Return the nearest goal within the limit and its distance, if any."""
         if not goals:
             return None, float("inf")
 
@@ -52,6 +61,7 @@ class DistanceFinder:
         return None, float("inf")
 
     def _create_connection_graph(self, map_matrix):
+        """Index walkable cells and connect cardinal neighbors in a dense graph."""
         map_matrix = np.matrix(map_matrix)
 
         
@@ -77,6 +87,7 @@ class DistanceFinder:
         self.connection_graph = graph_matrix
 
     def _cache_distances(self):
+        """Run breadth-first search from each node to cache shortest distances."""
         distances = np.zeros((self.number_of_nodes, self.number_of_nodes), int)
 
         for node in range(self.number_of_nodes):

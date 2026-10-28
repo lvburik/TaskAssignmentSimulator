@@ -23,6 +23,7 @@ def euclidean_distance(a: Position, b: Position) -> float:
 	return dist(a, b)
 
 def position_resolver(agent_id, world):
+	"""Look up an agent's current position by identifier."""
 	for agent in world.agents:
 		if agent.id == agent_id:
 			return agent.location
@@ -43,6 +44,7 @@ class LimitedRangePolicy:
 	
 
 	def __init__(self, max_distance: float, allow_when_unknown: bool = True, distance_fn: Callable[[Position, Position], float] = euclidean_distance):
+		"""Initialize the maximum separation at which messages may be delivered."""
 		self.max_distance = max_distance
 		self.allow_when_unknown = allow_when_unknown
 		self.distance_fn = distance_fn
@@ -50,6 +52,7 @@ class LimitedRangePolicy:
 		self.name = f"LimitedRange_{max_distance}"
 
 	def __call__(self, message: Message, recipient: Optional[Any], world) -> bool:
+		"""Allow delivery only when sender and recipient are closer than the limit."""
 		sender = message.sender
 		sender_location = position_resolver(sender, world)
 
@@ -71,15 +74,16 @@ class AlwaysAllowPolicy:
 		return True
 
 class PartlyBrokenPolicy:
-	""" part of agents cannot communicate with each other, but some can. """
+	"""Block messages when both sender and recipient are in the broken group."""
 
 	def __init__(self, number_of_agents, broken_fraction):
+		"""Mark the first fraction of agent IDs as the communication-limited group."""
 		self.broken_fraction = broken_fraction
 		self.broken_agents = set(range(int(number_of_agents * broken_fraction)))
 		self.name = f"{broken_fraction*100}%_Broken"
 
 	def __call__(self, message: Message, recipient: Optional[Any], _) -> bool:
+		"""Return whether this sender-recipient pair can communicate."""
 		if message.sender in self.broken_agents and recipient in self.broken_agents:
 			return False
 		return True
-

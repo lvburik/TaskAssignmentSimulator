@@ -1,3 +1,5 @@
+"""Convert an adjacent coordinate pair into a world movement action."""
+
 def ToDirection(current_location: tuple[int, int], next_location: tuple[int, int]) -> str:
     """
     Converts a pair of locations into a direction string.

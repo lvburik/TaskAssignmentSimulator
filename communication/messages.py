@@ -12,6 +12,8 @@ import time
 
 @dataclass
 class Message:
+	"""Serializable message envelope passed through the in-process message bus."""
+
 	sender: str
 	topic: Optional[str] = None
 	recipient: Optional[str] = None
@@ -20,6 +22,7 @@ class Message:
 	type: Optional[str] = None
 
 	def to_dict(self) -> Dict[str, Any]:
+		"""Return the message's JSON-compatible fields as a dictionary."""
 		return {
 			"sender": self.sender,
 			"topic": self.topic,
@@ -29,13 +32,13 @@ class Message:
 		}
 
 	def to_json(self) -> str:
+		"""Serialize this message as a JSON string."""
 		return json.dumps(self.to_dict())
 
 	@staticmethod
 	def from_json(s: str) -> "Message":
+		"""Create a message from a JSON string previously produced by this class."""
 		d = json.loads(s)
 		return Message(**d)
-
-
 
 

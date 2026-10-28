@@ -1,4 +1,6 @@
 
+"""Build and run the Cartesian product of configured simulation scenarios."""
+
 import simrunner
 import random
 from pathlib import Path
@@ -24,9 +26,11 @@ data_folder_dir = str(PATHS["data_dir"])
 message_policy = SIMULATION_SETTINGS["message_policy"]
 
 def _resolve_world_map_path(map_name: str) -> str:
+    """Resolve a configured map filename against the maps directory."""
     return str(Path(PATHS["maps_dir"]) / map_name)
 
 def main():
+    """Initialize and execute each configured simulation run."""
     if message_policy:
         number_of_simulations = len(number_of_agents) * len(planner_algorithm) * len(world_map) * len(number_of_tasks) * len(Simulation_seeds) * len(simulation_timesteps) * len(message_policy)
     else: 
@@ -77,7 +81,7 @@ def main():
                 "number_of_tasks": current_number_of_tasks,
                 "simulation_seed": current_simulation_seed,
                 "simulation_timesteps": current_simulation_timesteps,
-                "policies": current_message_policy.name
+                "policies": getattr(current_message_policy, "name", "NoPolicy")
             }, world_info = sim_world.get_world_map_info(), output_dir=data_folder_dir)
 
         

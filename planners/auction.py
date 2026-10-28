@@ -1,12 +1,14 @@
+"""Distributed task-queue planner using message-based bids."""
+
 from planners.class_definition import Planner
 from communication import messages
 from pathfinding.to_direction import ToDirection
 
 from task import Task
 
-#based on CBBA?
-
 class AuctionPlanner(Planner):
+    """Construct a short task queue and exchange bids to resolve ownership."""
+
     def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
         super().__init__(pathfinding_algorithm, agent_id, messagebus)
 
@@ -23,6 +25,7 @@ class AuctionPlanner(Planner):
         self.current_goal = None
         
     def update_plan(self, observation: dict):
+        """Incorporate bids, maintain the queue, and publish this agent's bids."""
         self.agent_location = observation["agent_location"]
         self.agent_id = observation["agent_id"]
         self.world_time = observation["time"]
@@ -55,7 +58,7 @@ class AuctionPlanner(Planner):
         
 
     def act(self):
-        
+        """Move toward the first queued task or complete it when reached."""
         if self.current_goal is None:
             return None  # Placeholder action when no goal is selected
         
@@ -68,6 +71,7 @@ class AuctionPlanner(Planner):
         return ToDirection(self.agent_location, next_location)  # Convert the next step in the path to a direction
         
     def _update_distance_to_first_task_in_queue(self):
+        """Refresh the first queue entry's travel-and-service cost."""
         if self.current_task_queue:
             first_task, _ = self.current_task_queue[0]
             distance_to_first_task = self.pathfinding_algorithm.get_distance(self.agent_location, first_task.location)
@@ -75,6 +79,7 @@ class AuctionPlanner(Planner):
             self.current_task_queue[0] = (first_task, distance_to_first_task + 1)  # add 1 to distance to account for the time it takes to perform the task
 
     def _create_greedy_queue(self, uncompleted_tasks):
+        """Extend the queue with nearby tasks not already claimed more cheaply."""
         new_task_locations = {task.location: task for task in uncompleted_tasks if task.id not in [t.id for t, _ in self.current_task_queue]}
         while len(self.current_task_queue) < 5 or len(self.current_task_queue) < len(new_task_locations):
             if not new_task_locations:
@@ -101,6 +106,7 @@ class AuctionPlanner(Planner):
             del new_task_locations[closest_goal]
 
     def _remove_lost_tasks_from_queue(self):
+        """Discard queue entries after the first task won by another agent."""
         # remove tasks that agent got outbid on from the queue
         for ii, (task, distance) in enumerate(self.current_task_queue):
             if self.task_bids.get(task.id) and self.task_bids[task.id][0] != self.agent_id:
@@ -109,6 +115,7 @@ class AuctionPlanner(Planner):
                 break  # Exit the loop after modifying the list
 
     def _insert_tasks_into_queue(self, uncompleted_tasks):
+        """Insert a profitable task before a later queued task when possible."""
         new_task_locations = {task.location: task for task in uncompleted_tasks if task.id not in [t.id for t, _ in self.current_task_queue]}
         start_location = self.agent_location
         task = None
@@ -135,6 +142,7 @@ class AuctionPlanner(Planner):
             start_location = task.location  # Update the start location for the next task
 
     def _should_insert_task(self, prior_task, canidate_task, canidate_distance):
+        """Return whether this candidate's bid beats the currently recorded bid."""
         #check if the task has already been caimed by another agent
         if canidate_task.id not in self.task_bids:
             return True
@@ -146,6 +154,7 @@ class AuctionPlanner(Planner):
         return False
 
     def _clean_up_queue(self, uncompleted_tasks):
+        """Remove completed or otherwise unavailable tasks from the queue."""
         # Remove tasks from the queue that are no longer in the uncompleted_tasks list
         uncompleted_task_ids = {task.id for task in uncompleted_tasks}
         self.current_task_queue = [(task, distance) for task, distance in self.current_task_queue if task.id in uncompleted_task_ids]
@@ -158,6 +167,7 @@ class AuctionPlanner(Planner):
 
 
     def _configure_bids(self):
+        """Update bids for queued tasks and release bids for removed tasks."""
         prior_task = None
 
         #update bids
@@ -183,9 +193,11 @@ class AuctionPlanner(Planner):
                     self.task_bids[task_id] = (task_id, self.agent_id, float('inf'), self.world_time)
                 
     def _on_task(self, message: messages.Message) -> None:
+        """Buffer auction topic messages for processing during planning."""
         self.received_messages.append(("topic", message.sender, message.topic, message.payload))
              
     def _send_bid_database(self):
+        """Broadcast the current bid database to auction subscribers."""
         task_database = self.task_bids
 
         self.message_bus.publish(messages.Message(
@@ -196,7 +208,7 @@ class AuctionPlanner(Planner):
         
 
     def _process_received_messages(self):
-    
+        """Merge newer or better bids from received auction messages."""
         for message in self.received_messages:
             for bid in message[3]["task_db"].values():
                 if self._is_this_bid_better(bid):
@@ -206,6 +218,7 @@ class AuctionPlanner(Planner):
         self.received_messages.clear()
 
     def _is_this_bid_better(self, bid):
+        """Compare a candidate bid with the current winning bid for its task."""
         (task_id, bid_publisher, bid_value, bid_time) = bid
 
         if task_id not in self.task_bids.keys():
@@ -223,6 +236,7 @@ class AuctionPlanner(Planner):
         return False
 
     def _compute_bid(self, prior_task: Task | None, canidate_distance: int):
+        """Calculate travel, service, and time cost for a candidate task."""
         bid = 0.001 * self.agent_id
 
         if prior_task:
@@ -234,6 +248,7 @@ class AuctionPlanner(Planner):
         return bid + canidate_distance + self.world_time
     
     def _clean_up_bid_database(self, observation):
+        """Remove bids for tasks that have already been completed."""
         tasks = observation["tasks"]
 
         for task in tasks:
@@ -241,4 +256,3 @@ class AuctionPlanner(Planner):
                 if task.id in self.task_bids.keys():
                     #remove from the list
                     self.task_bids.pop(task.id)
-
