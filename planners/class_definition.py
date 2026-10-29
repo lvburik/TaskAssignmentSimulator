@@ -3,6 +3,7 @@
 from abc import abstractmethod, ABC
 from communication import bus as bus
 from communication import messages as messages
+from pathfinding.to_direction import ToDirection
 
 class Planner(ABC):
     """Base contract for planners that update plans and return world actions."""
@@ -19,9 +20,20 @@ class Planner(ABC):
         """Update planner state from the agent's current observation."""
         pass
 
-    @abstractmethod
     def act(self):
-        """Return one movement, task-completion, or idle action."""
+        """Move toward the current goal or perform the task when at its location."""
+        if self.current_goal is None:
+            return None  # No goal selected
+
+        if self.agent_location == self.current_goal:
+            self._on_task_reached()
+            return "perform_task"
+
+        next_location = self.pathfinding_algorithm.next_step(self.agent_location, self.current_goal)
+        return ToDirection(self.agent_location, next_location)
+
+    def _on_task_reached(self):
+        """Hook called when the agent is at its goal, before performing the task."""
         pass
 
     

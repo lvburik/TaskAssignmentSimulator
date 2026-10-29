@@ -7,7 +7,7 @@ import os
 import torch
 from torch import Tensor, nn
 
-from pathfinding.to_direction import ToDirection
+from planners.class_definition import Planner
 
 from planners.model_input import available_tasks, cnn_inputs
 from app_config import PATHS
@@ -225,7 +225,7 @@ def _load_model(path: Path, device: torch.device) -> tuple[nn.Module, float]:
     return model, float(checkpoint.get("threshold", 0.5))
 
 
-class CNNPlanner:
+class CNNPlanner(Planner):
     """Select tasks with a cached CNN checkpoint and shortest-path routing."""
 
     _model_cache: dict[tuple[Path, torch.device], tuple[nn.Module, float]] = {}
@@ -273,17 +273,4 @@ class CNNPlanner:
             self.current_goal = self.current_task_queue[0][0].location
 
             self.current_queue = [entry[0] for entry in self.current_task_queue]
-
-    def act(self):
-        """Move toward the nearest predicted task or perform it."""
-        if self.current_goal is None:
-            return None  # Placeholder action when no goal is selected
-            
-        if self.agent_location == self.current_goal:
-            return "perform_task"  # Placeholder action when at the goal
-    
-        else: 
-            next_location = self.pathfinding_algorithm.next_step(self.agent_location, self.current_goal)
-            
-        return ToDirection(self.agent_location, next_location)  # Convert the next step in the path to a direction
            

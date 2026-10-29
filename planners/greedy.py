@@ -2,7 +2,6 @@
 
 from planners.class_definition import Planner
 
-from pathfinding.to_direction import ToDirection
 
 class GreedyTaskSelector(Planner):
     """Choose the closest active task and follow a shortest path to it."""
@@ -33,17 +32,5 @@ class GreedyTaskSelector(Planner):
         self.current_goal =  goal
         
 
-    def act(self):
-        """Move toward the selected task or perform it when at its location."""
-        if self.current_goal is None:
-            return None  # Placeholder action when no goal is selected
-        
-        if self.agent_location == self.current_goal:
-            return "perform_task"  # Placeholder action when at the goal
-        
-        else: 
-            next_location = self.pathfinding_algorithm.next_step(self.agent_location, self.current_goal)
-
-        return ToDirection(self.agent_location, next_location)  # Convert the next step in the path to a direction
 
         

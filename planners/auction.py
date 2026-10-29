@@ -2,7 +2,6 @@
 
 from planners.class_definition import Planner
 from communication import messages
-from pathfinding.to_direction import ToDirection
 
 from task import Task
 
@@ -57,19 +56,6 @@ class AuctionPlanner(Planner):
 
         
 
-    def act(self):
-        """Move toward the first queued task or complete it when reached."""
-        if self.current_goal is None:
-            return None  # Placeholder action when no goal is selected
-        
-        if self.agent_location == self.current_goal:
-            return "perform_task"  # Placeholder action when at the goal
-
-        else: 
-            next_location = self.pathfinding_algorithm.next_step(self.agent_location, self.current_goal)
-        
-        return ToDirection(self.agent_location, next_location)  # Convert the next step in the path to a direction
-        
     def _update_distance_to_first_task_in_queue(self):
         """Refresh the first queue entry's travel-and-service cost."""
         if self.current_task_queue:

@@ -2,7 +2,6 @@
 
 from planners.class_definition import Planner
 
-from pathfinding.to_direction import ToDirection
 
 
 class TheoryOfMindPlanner(Planner):
@@ -48,22 +47,10 @@ class TheoryOfMindPlanner(Planner):
             self.current_goal = best_task.location
             self.current_queue = [best_task]
     
-    def act(self):
-        """Follow the current goal or perform its task."""
-        if self.current_goal is None:
-            return None  # Placeholder action when no goal is selected
-        
-        if self.agent_location == self.current_goal:
-            #clear beliefs.
-            self.beliefs.clear()
-            
-            return "perform_task"  # Placeholder action when at the goal
-        
-        else: 
-            next_location = self.pathfinding_algorithm.next_step(self.agent_location, self.current_goal)
-        
-        return ToDirection(self.agent_location, next_location)  # Convert the next step in the path to a direction
-    
+    def _on_task_reached(self):
+        """Clear beliefs once the task is reached."""
+        self.beliefs.clear()
+
     def _initialize_beliefs(self, uncompleted_tasks: list):
         """Assign an initially uniform belief across available tasks."""
         if not uncompleted_tasks:

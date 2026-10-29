@@ -1,6 +1,6 @@
 """Planner that selects tasks with a saved multilayer-perceptron classifier."""
 
-from pathfinding.to_direction import ToDirection
+from planners.class_definition import Planner
 from pathlib import Path
 import pickle
 
@@ -8,7 +8,7 @@ from planners.model_input import available_tasks, tabular_inputs
 from app_config import PATHS
 
 
-class MLPPlanner:
+class MLPPlanner(Planner):
     """Load an MLP pickle and route to tasks it predicts for this agent."""
 
     def __init__(self, pathfinding_algorithm=None, agent_id = None, messagebus = None):
@@ -47,17 +47,4 @@ class MLPPlanner:
             self.current_goal = self.current_task_queue[0][0].location
 
             self.current_queue = [entry[0] for entry in self.current_task_queue]
-
-    def act(self):
-        """Move toward the nearest selected task or perform it."""
-        if self.current_goal is None:
-            return None  # Placeholder action when no goal is selected
-            
-        if self.agent_location == self.current_goal:
-            return "perform_task"  # Placeholder action when at the goal
-    
-        else: 
-            next_location = self.pathfinding_algorithm.next_step(self.agent_location, self.current_goal)
-            
-        return ToDirection(self.agent_location, next_location)  # Convert the next step in the path to a direction
            
