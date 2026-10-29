@@ -6,7 +6,7 @@ tracked in the repository.
 
 from pathlib import Path
 
-from communication.policies import AlwaysAllowPolicy
+from communication.policies import * # import all message policies
 
 
 BASE_DIR = Path(__file__).resolve().parent
