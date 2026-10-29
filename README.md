@@ -147,7 +147,6 @@ and performs a task when the agent reaches its cell.
 
 | Name | What it does |
 | --- | --- |
-| `Random` | Chooses random movement directions without selecting or assigning tasks. |
 | `Greedy` | Selects the nearest reachable active task using the pathfinding distances. It does not coordinate task ownership with other agents. |
 | `Tom` | Maintains a belief score for each incomplete task. It initializes scores uniformly, then reweights them using the agent's distance, observed teammate distances, and its current queue. It selects the task with the highest score; it does not exchange messages. |
 | `Auction` | Builds a task queue by adding nearby tasks, then exchanges task bids with other agents on the `auction` message topic. Lower travel-and-time bids win; agent ID provides a small tie-break offset. It drops tasks that are completed or won by another agent and publishes its bid database as it replans. |

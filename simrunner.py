@@ -4,7 +4,6 @@ import agent
 import task
 import random
 
-from planners.random_moves import RandomMovesPlanner
 from planners.greedy import GreedyTaskSelector
 from planners.tom import TheoryOfMindPlanner
 from planners.auction import AuctionPlanner
@@ -27,7 +26,6 @@ def _resolve_planner(planner_algorithm):
     """Return a planner class for a supported name or pass through a class."""
     if isinstance(planner_algorithm, str):
         planners = {
-            "Random": RandomMovesPlanner,
             "Greedy": GreedyTaskSelector,
             "Tom": TheoryOfMindPlanner,
             "Auction": AuctionPlanner,
