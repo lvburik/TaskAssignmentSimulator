@@ -139,15 +139,58 @@ policies, delivery is unrestricted.
    log. In headless mode, steps execute as quickly as possible; visualization
    uses `simrunner_max_fps`.
 
-The available planners are:
+## Planning policies
 
-- `Random`: chooses a random direction without task assignment.
-- `Greedy`: moves toward the closest reachable active task.
-- `Tom`: selects tasks using beliefs informed by task distance and observed
-  competing agents.
-- `Auction`: maintains a task queue and exchanges bids with other agents.
-- `XGB` and `MLP`: use a supplied tabular classifier to select tasks.
-- `CNN`: uses a supplied PyTorch classifier to select tasks from map images.
+Set `planner_algorithm` to one of the names below. A planner chooses tasks
+and/or movement goals; the shared planner base class follows shortest paths
+and performs a task when the agent reaches its cell.
+
+| Name | What it does |
+| --- | --- |
+| `Random` | Chooses random movement directions without selecting or assigning tasks. |
+| `Greedy` | Selects the nearest reachable active task using the pathfinding distances. It does not coordinate task ownership with other agents. |
+| `Tom` | Maintains a belief score for each incomplete task. It initializes scores uniformly, then reweights them using the agent's distance, observed teammate distances, and its current queue. It selects the task with the highest score; it does not exchange messages. |
+| `Auction` | Builds a task queue by adding nearby tasks, then exchanges task bids with other agents on the `auction` message topic. Lower travel-and-time bids win; agent ID provides a small tie-break offset. It drops tasks that are completed or won by another agent and publishes its bid database as it replans. |
+| `XGB` | Uses a saved XGBoost-compatible tabular classifier to decide which active tasks to queue, then orders selected tasks by pathfinding distance from the agent. |
+| `MLP` | Uses a saved MLP tabular classifier in the same way as `XGB`. |
+| `CNN` | Uses a saved CNN to classify each active task from a three-channel map image, then orders selected tasks by pathfinding distance. Its checkpoint supplies the positive-class threshold. |
+
+`XGB`, `MLP`, and `CNN` only queue tasks predicted as positive. If no task is
+selected, the agent has no goal until its next plan update. The tabular models
+use task and agent coordinates, Manhattan-distance and teammate-competition
+features, team size, and map dimensions. The CNN input has a map channel, a
+task-location channel with the candidate task highlighted, and an
+agent-location channel with the candidate agent highlighted.
+
+## Message-delivery policies
+
+Message policies filter message-bus delivery, not what agents can observe in
+the world. For each subscriber, every policy registered on the bus must return
+`True` for the callback to receive the message. The built-in configurations
+are:
+
+| Policy | Behavior |
+| --- | --- |
+| `AlwaysAllowPolicy()` | Allows every message delivery. |
+| `LimitedRangePolicy(max_distance)` | Allows delivery when the sender and a concrete recipient are less than `max_distance` apart, measured by Euclidean distance between their map coordinates. Use agent IDs with known positions; topic subscribers need a `subscriber_id` for this position-based check. |
+| `PartlyBrokenPolicy(number_of_agents, broken_fraction)` | Treats IDs from `0` up to (but not including) `int(number_of_agents * broken_fraction)` as the broken group. It blocks a delivery only when both the sender and recipient are in that group; other pairs can communicate. |
+
+The `message_policy` setting is a list of policy objects used as separate
+simulation scenarios, so each list entry runs as its own configuration in the
+Cartesian product. It is not a list of filters composed together. An empty
+list disables message filtering. For example:
+
+```python
+SIMULATION_SETTINGS["message_policy"] = [
+    AlwaysAllowPolicy(),
+    LimitedRangePolicy(max_distance=5),
+    PartlyBrokenPolicy(number_of_agents=40, broken_fraction=0.25),
+]
+```
+
+`Auction` uses the message bus to exchange bids. Other planners do not require
+message delivery. The bus can also be used by custom planners; a custom
+delivery policy is callable as `(message, recipient, world) -> bool`.
 
 ## Outputs
 
@@ -156,6 +199,73 @@ When `record` is enabled, a timestamped `TASim_...json` file is written under
 the simulation parameters and map dimensions/matrix; subsequent lines contain
 one time step's agent positions and queues, plus active task positions. The
 default data directory is `Data/`, which is ignored by Git.
+
+## Train learned planners with TaskAssignmentLearner
+
+[TaskAssignmentLearner](https://github.com/lvburik/TaskAssignmentLearner)
+prepares datasets from the simulator's JSON Lines logs and trains the
+classifiers used by `XGB`, `MLP`, and `CNN`. The builders create one example
+for each agent/task pair at a timestep. A task is labeled positive when it is
+present in that agent's logged task queue. The resulting models therefore
+learn the assignments represented in the source simulations; the data does
+not itself assert that those assignments are optimal.
+
+1. In the simulator, set `record = True` and run the scenarios whose task
+   assignments you want to learn from. Each run produces a `.json` JSON Lines
+   file in `PATHS["data_dir"]`. The learner expects the first two lines to
+   contain simulation metadata and world/map information, followed by the
+   per-timestep agent queues and active tasks.
+2. Clone TaskAssignmentLearner and install its requirements in its own Python
+   environment. Use separate input directories for training and validation
+   simulations, and place the corresponding `.json` log files in them. Keep
+   entire runs separate between the two splits to avoid evaluating on
+   training data.
+3. From the TaskAssignmentLearner repository root, build the CNN datasets:
+
+   ```bash
+   python CNN_dataset_builder.py --input-dir JSON_Data/train \
+     --output DataSets/CNN_train.h5
+   python CNN_dataset_builder.py --input-dir JSON_Data/validation \
+     --output DataSets/CNN_validation.h5
+   ```
+
+   Or build the tabular datasets used by either `XGB` or `MLP`:
+
+   ```bash
+   python XGBoost_dataset_builder.py --input-dir JSON_Data/train \
+     --output DataSets/XGBoost_train.h5
+   python XGBoost_dataset_builder.py --input-dir JSON_Data/validation \
+     --output DataSets/XGBoost_validation.h5
+   ```
+
+   Both builders accept `--max-timesteps N` to limit the number of timesteps
+   read from each simulation.
+4. Train a model using the matching dataset:
+
+   ```bash
+   python CNN_train.py
+   python XGBoost_train.py
+   python MLP_train.py
+   ```
+
+   The training scripts accept options for dataset paths and model search;
+   run a script with `--help` for details. By default, CNN training writes
+   `models/CNN_best.pt`; the tabular training scripts save ranked pickle
+   models under `models/` (the top-ranked output uses the `_1` suffix). CNN
+   training loads its datasets into memory, so allow sufficient RAM for the
+   training and validation images.
+5. Point the simulator's `PATHS` entries at the trained files, either by
+   copying them into its `models/` directory or by editing `config.py`:
+
+   ```python
+   PATHS["cnn_model"] = Path("/path/to/TaskAssignmentLearner/models/CNN_best.pt")
+   PATHS["xgb_model"] = Path("/path/to/TaskAssignmentLearner/models/XGBoost_best_1.pkl")
+   PATHS["mlp_model"] = Path("/path/to/TaskAssignmentLearner/models/MLP_best_1.pkl")
+   ```
+
+   Then select `CNN`, `XGB`, or `MLP` in `planner_algorithm`. Keep the learner
+   and simulator model dependencies compatible; only load pickle checkpoints
+   from trusted sources.
 
 ## Source layout
 
